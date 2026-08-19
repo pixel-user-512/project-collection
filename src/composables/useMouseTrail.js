@@ -1,14 +1,14 @@
 import { ref } from 'vue'
 
-const isMouseTrailEnabled = ref(true)
+const isMouseTrailEnabled = ref(false)
 
-// Initialize from localStorage or default to enabled
+// Initialize from localStorage or default to disabled
 const initMouseTrail = () => {
   const saved = localStorage.getItem('mouseTrail')
-  if (saved === 'disabled') {
-    isMouseTrailEnabled.value = false
-  } else {
+  if (saved === 'enabled') {
     isMouseTrailEnabled.value = true
+  } else {
+    isMouseTrailEnabled.value = false
   }
 }
 

@@ -5,6 +5,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import * as THREE from 'three'
+import { debounce } from '../composables/useDebounce'
 
 const containerRef = ref(null)
 
@@ -21,7 +22,13 @@ const globalBlobSampler = {
 
 // Expose a method to sample the rendered pixel color at a screen position
 // Returns { r, g, b, a } or null if not ready
-const sampleScreenPixel = (x, y) => {
+//
+// Wrapped in a debounce so that when it's called repeatedly during
+// mousemove/scroll events, the expensive gl.readPixels call only runs
+// on the leading edge of a burst and once more after the user pauses.
+// The leading edge ensures callers that need an immediate result still
+// get one; the trailing edge captures the final state.
+const sampleScreenPixel = debounce((x, y) => {
   if (!renderer || !material) return null
   const rect = containerRef.value?.getBoundingClientRect()
   if (!rect) return null
@@ -37,7 +44,7 @@ const sampleScreenPixel = (x, y) => {
   const pixel = new Uint8Array(4)
   gl.readPixels(px, h - py - 1, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel)
   return { r: pixel[0], g: pixel[1], b: pixel[2], a: pixel[3] }
-}
+}, 50)
 
 /**
  * Read a rectangular block of the rendered frame in ONE gl.readPixels call.
@@ -290,7 +297,7 @@ const fragmentShader = /* glsl */ `
   float softShadow(vec3 ro, vec3 rd) {
     float res = 1.0;
     float t = 0.08;
-    for (int i = 0; i < 24; i++) {
+    for (int i = 0; i < 1; i++) {
       float h = sdScene(ro + rd * t);
       if (h < 0.001) return 0.15;
       res = min(res, 10.0 * h / t);
@@ -312,7 +319,7 @@ const fragmentShader = /* glsl */ `
     float t = 0.0;
     float d = 0.0;
     bool hit = false;
-    for (int i = 0; i < 128; i++) {
+    for (int i = 0; i < 64; i++) {
       vec3 p = ro + rd * t;
       d = sdScene(p);
       if (d < 0.0025) { hit = true; break; }
@@ -391,7 +398,7 @@ onMounted(() => {
   renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true, preserveDrawingBuffer: true })
   renderer.setSize(width, height)
   // Cap pixel ratio - raymarching is fragment-heavy
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5))
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio,1))
   container.appendChild(renderer.domElement)
 
   scene = new THREE.Scene()
@@ -501,14 +508,25 @@ onMounted(() => {
   document.addEventListener('mouseleave', handleMouseLeave)
 
   // --- Scroll ----------------------------------------------------
+  let isVisible = true
   let scrollProgress = 0
   const handleScroll = () => {
-    const hero = document.getElementById('home')
-    if (!hero) return
-    const rect = hero.getBoundingClientRect()
-    scrollProgress = Math.max(0, Math.min(1, -rect.top / window.innerHeight))
+    // The hero section is sticky (top-0), so getBoundingClientRect().top
+    // is always 0. Use window.scrollY instead to detect when the hero
+    // (and its blobs) are actually covered by the sections below it.
+    scrollProgress = Math.min(1, window.scrollY / window.innerHeight)
+    const wasVisible = isVisible
+    // Pause animation when the hero has scrolled out of view
+    isVisible = scrollProgress < 0.95
+
+    // Fully stop the rAF loop when off-screen, restart it when visible
+    if (wasVisible && !isVisible) {
+      cancelAnimationFrame(animationId)
+      animationId = null
+    } else if (!wasVisible && isVisible) {
+      animate()
+    }
   }
-  handleScroll()
   window.addEventListener('scroll', handleScroll, { passive: true })
 
   // --- Resize ----------------------------------------------------
@@ -528,6 +546,10 @@ onMounted(() => {
   const start = performance.now()
   const animate = () => {
     animationId = requestAnimationFrame(animate)
+
+    // Safety net: skip rendering if the canvas is off-screen
+    if (!isVisible) return
+
     const time = (performance.now() - start) / 1000
 
     // Ease scroll into the uniform so it never snaps
@@ -597,7 +619,10 @@ onMounted(() => {
     material.uniforms.uTime.value = time
     renderer.render(scene, camera)
   }
-  animate()
+  // Initial visibility check (after animate is defined so handleScroll
+  // can safely restart the loop if needed)
+  handleScroll()
+  if (isVisible) animate()
 
   cleanupFns.push(() => {
     cancelAnimationFrame(animationId)
