@@ -106,9 +106,9 @@ const setupCardStack = () => {
   const cards = Array.from(stackRef.value.querySelectorAll('.stack-card'))
   if (cards.length === 0) return
 
-  // Messy rotations and offsets for the card stack
-  const rotations = [-6, 4, -3, 2]
-  const offsets = [0, 8, 16, 24]
+  // Neat stack - cards aligned on top of each other with consistent offsets
+  const rotations = [0, 0, 0, 0]
+  const offsets = [0, 10, 20, 30]
 
   // Apply stack positions to all cards based on their index
   const applyStackPositions = () => {
@@ -393,7 +393,7 @@ onUnmounted(() => {
         </div>
 
         <!-- Card stack view -->
-        <div v-else ref="stackRef" class="order-2 lg:order-2 relative h-[12rem] sm:h-[18rem] w-full max-w-[20rem] sm:max-w-none mx-auto select-none">
+        <div v-else ref="stackRef" class="order-2 lg:order-2 relative h-[12rem] sm:h-[18rem] w-full sm:ml-0  sm:w-full sm:max-w-none select-none">
           <div
             v-for="(item, index) in highlights"
             :key="item.title"
