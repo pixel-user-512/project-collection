@@ -282,7 +282,7 @@ watch(isSettingsOpen, async (isOpen) => {
 
         <!-- Mobile Menu Button -->
         <button
-          @click="isMenuOpen = !isMenuOpen"
+          @click.stop="isMenuOpen = !isMenuOpen"
           class="md:hidden text-secondary-300 hover:text-white light:text-secondary-600 light:hover:text-secondary-900 focus:outline-none transition-colors duration-300"
           :class="!isScrolled && isDarkBackground.nav ? 'light:text-white light:hover:text-secondary-900' : 'light:text-secondary-600 light:hover:text-secondary-900'"
           aria-label="Toggle menu"

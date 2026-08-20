@@ -143,6 +143,8 @@ const setupCardStack = () => {
   let startY = 0
   let currentX = 0
   let currentY = 0
+  let maxDragLeft = 0
+  let maxDragRight = 0
 
   const setupDragOnCard = (card) => {
     // Clean up previous listeners
@@ -156,6 +158,11 @@ const setupCardStack = () => {
       startY = point.clientY
       currentX = 0
       currentY = 0
+      // Capture the card's viewport bounds so we can clamp the drag
+      // to keep the card fully within the visible viewport
+      const rect = card.getBoundingClientRect()
+      maxDragLeft = rect.left
+      maxDragRight = window.innerWidth - rect.right
       gsap.killTweensOf(card)
       gsap.set(card, { cursor: 'grabbing' })
     }
@@ -165,9 +172,8 @@ const setupCardStack = () => {
       const point = e.touches ? e.touches[0] : e
       currentX = point.clientX - startX
       currentY = point.clientY - startY
-      // Clamp horizontal drag to prevent page overflow on mobile
-      const maxDragX = window.innerWidth * 0.35
-      currentX = Math.max(-maxDragX, Math.min(maxDragX, currentX))
+      // Clamp horizontal drag to keep the card within the viewport
+      currentX = Math.max(-maxDragLeft, Math.min(maxDragRight, currentX))
       gsap.set(card, {
         x: currentX,
         y: currentY,
@@ -187,8 +193,9 @@ const setupCardStack = () => {
       if (absX > threshold || absY > threshold) {
         const directionX = currentX > 0 ? 1 : -1
         const directionY = currentY > 0 ? 1 : -1
-        // Constrain swipe distance to prevent horizontal page overflow on mobile
-        const swipeX = directionX * Math.min(Math.abs(currentX) + 100, window.innerWidth * 0.35)
+        // Constrain swipe distance to keep the card within the viewport
+        const maxSwipeX = directionX > 0 ? maxDragRight : maxDragLeft
+        const swipeX = directionX * Math.min(Math.abs(currentX) + 100, maxSwipeX)
         const swipeY = directionY * 200
 
         gsap.to(card, {
