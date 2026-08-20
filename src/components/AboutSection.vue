@@ -165,6 +165,9 @@ const setupCardStack = () => {
       const point = e.touches ? e.touches[0] : e
       currentX = point.clientX - startX
       currentY = point.clientY - startY
+      // Clamp horizontal drag to prevent page overflow on mobile
+      const maxDragX = window.innerWidth * 0.35
+      currentX = Math.max(-maxDragX, Math.min(maxDragX, currentX))
       gsap.set(card, {
         x: currentX,
         y: currentY,

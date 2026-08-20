@@ -52,6 +52,9 @@ const handleClickOutside = (e) => {
   if (settingsRef.value && !settingsRef.value.contains(e.target)) {
     isSettingsOpen.value = false
   }
+  if (navRef.value && !navRef.value.contains(e.target)) {
+    isMenuOpen.value = false
+  }
 }
 
 onMounted(() => {
