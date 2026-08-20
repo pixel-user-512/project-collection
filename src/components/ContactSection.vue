@@ -22,9 +22,8 @@ const socialLinks = [
 ]
 
 onMounted(() => {
-  // Section title and subtitle reveal - horizontal slide from left
+  // Section title reveal - horizontal slide from left
   scrollTriggers.push(...useHorizontalSlideReveal(titleRef.value, { x: -120, start: 'top 90%', end: 'top 40%' }))
-  scrollTriggers.push(...useHorizontalSlideReveal(subtitleRef.value, { x: -120, start: 'top 90%', end: 'top 40%' }))
 
   // Info reveal - Apple style
   scrollTriggers.push(

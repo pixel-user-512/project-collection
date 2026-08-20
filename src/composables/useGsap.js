@@ -309,14 +309,25 @@ export function useTilt(element, maxTilt = 8) {
  * @param {string} selector - Selector for items to animate
  */
 export function useFilterAnimation(container, selector) {
-  gsap.from(container.querySelectorAll(selector), {
-    y: 30,
-    opacity: 0,
-    scale: 0.95,
-    duration: 0.5,
-    stagger: 0.08,
-    ease: 'power2.out',
-  })
+  const items = container.querySelectorAll(selector)
+
+  // Kill any in-progress tweens on these elements to avoid conflicts
+  // from rapid tab switching (leftover inline transforms/opacity).
+  gsap.killTweensOf(items)
+
+  gsap.fromTo(
+    items,
+    { y: 30, opacity: 0, scale: 0.95 },
+    {
+      y: 0,
+      opacity: 1,
+      scale: 1,
+      duration: 0.5,
+      stagger: 0.08,
+      ease: 'power2.out',
+      clearProps: 'all',
+    }
+  )
 }
 
 /**
@@ -494,6 +505,23 @@ export function useMouseLavaStreak(options = {}) {
     mouse.y = e.clientY
   }
 
+  // Track touch position for mobile/tablet swipe support
+  const handleTouchMove = (e) => {
+    if (e.touches.length > 0) {
+      mouse.x = e.touches[0].clientX
+      mouse.y = e.touches[0].clientY
+    }
+  }
+
+  const handleTouchStart = (e) => {
+    if (e.touches.length > 0) {
+      mouse.x = e.touches[0].clientX
+      mouse.y = e.touches[0].clientY
+      prevMouse.x = mouse.x
+      prevMouse.y = mouse.y
+    }
+  }
+
   // Lava core pulse animation - slow, organic breathing like a lava lamp
   const corePulse = gsap.to({}, {
     duration: 0.2,
@@ -637,10 +665,14 @@ export function useMouseLavaStreak(options = {}) {
   })
 
   window.addEventListener('mousemove', handleMouseMove)
+  window.addEventListener('touchmove', handleTouchMove, { passive: true })
+  window.addEventListener('touchstart', handleTouchStart, { passive: true })
 
   // Cleanup function
   return () => {
     window.removeEventListener('mousemove', handleMouseMove)
+    window.removeEventListener('touchmove', handleTouchMove)
+    window.removeEventListener('touchstart', handleTouchStart)
     window.removeEventListener('resize', resizeCanvas)
     window.removeEventListener('colorpalettechange', refreshPalette)
     gsap.ticker.remove(drawAnimation)

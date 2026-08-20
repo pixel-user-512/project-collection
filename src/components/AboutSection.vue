@@ -44,9 +44,6 @@ onMounted(() => {
   // Section title reveal - horizontal slide from left
   scrollTriggers.push(...useHorizontalSlideReveal(titleRef.value, { x: -120, start: 'top 90%', end: 'top 40%' }))
 
-  // Text and skills reveal - horizontal slide from left
-  scrollTriggers.push(...useHorizontalSlideReveal(textRef.value, { x: -140, start: 'top 90%', end: 'top 30%' }))
-
   // Highlight cards reveal with stagger - Apple style
   scrollTriggers.push(
     ...useAppleTextReveal(cardsRef.value, {

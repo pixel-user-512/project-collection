@@ -14,6 +14,12 @@ const mobileMenuRef = ref(null)
 const settingsRef = ref(null)
 const navLinksRef = ref(null)
 
+// Detect touch devices (mobile/tablet) to show "Swipe Animation" instead of "Mouse Animation"
+const isTouchDevice = ref(false)
+if (typeof window !== 'undefined') {
+  isTouchDevice.value = window.matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window
+}
+
 const { isDark, toggleTheme } = useTheme()
 const { isMouseTrailEnabled, toggleMouseTrail } = useMouseTrail()
 const { colorPalettes, selectedPalette, setPalette } = useColorPalette()
@@ -148,7 +154,7 @@ watch(isSettingsOpen, async (isOpen) => {
             :key="link.href"
             :href="link.href"
             @click="link.href === '#home' ? scrollToTop($event) : null"
-            class="text-secondary-300 hover:text-primary-400 light:text-black transition-colors duration-200 text-sm font-medium relative group"
+            class="text-secondary-300 whitespace-nowrap hover:text-primary-400 light:text-black transition-colors duration-200 text-sm font-medium relative group"
             
           >
             {{ link.label }}
@@ -219,7 +225,7 @@ watch(isSettingsOpen, async (isOpen) => {
                   <svg class="w-4 h-4 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
                   </svg>
-                  <span class="text-sm text-secondary-300 light:text-secondary-600">Mouse Animation</span>
+                  <span class="text-sm text-secondary-300 light:text-secondary-600">{{ isTouchDevice ? 'Swipe Animation' : 'Mouse Animation' }}</span>
                 </div>
                 <!-- Toggle Switch -->
                 <button
@@ -303,7 +309,7 @@ watch(isSettingsOpen, async (isOpen) => {
         <a
           href="#contact"
           @click="isMenuOpen = false"
-          class="block bg-accent-500 hover:bg-accent-600 text-white px-4 py-2 rounded-lg text-sm font-semibold text-center transition-all duration-300 hover:scale-105"
+          class="block text-secondary-300 hover:text-primary-400 light:text-secondary-600 light:hover:text-primary-600 transition-colors duration-200 py-2 text-sm font-medium"
         >
           Hire Me
         </a>
@@ -342,7 +348,7 @@ watch(isSettingsOpen, async (isOpen) => {
               <svg class="w-4 h-4 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
               </svg>
-              <span class="text-sm text-secondary-300 light:text-secondary-600">Mouse Animation</span>
+              <span class="text-sm text-secondary-300 light:text-secondary-600">{{ isTouchDevice ? 'Swipe Animation' : 'Mouse Animation' }}</span>
             </div>
             <button
               @click="toggleMouseTrail"

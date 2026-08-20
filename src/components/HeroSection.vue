@@ -23,7 +23,6 @@ const nameRef = ref(null)
 const roleRef = ref(null)
 const descriptionRef = ref(null)
 const buttonsRef = ref(null)
-const scrollIndicatorRef = ref(null)
 const contentRef = ref(null)
 const heroSectionRef = ref(null)
 const resumeBtnRef = ref(null)
@@ -94,12 +93,6 @@ onMounted(() => {
       { opacity: 1, y: 0, filter: 'blur(0px)', clearProps: 'filter', duration: 0.8, stagger: 0.15 },
       '-=0.5'
     )
-    .fromTo(
-      scrollIndicatorRef.value,
-      { opacity: 0, y: -20, filter: 'blur(6px)' },
-      { opacity: 1, y: 0, filter: 'blur(0px)', clearProps: 'filter', duration: 0.7 },
-      '-=0.4'
-    )
 
   // Curtain lift effect - the hero content gently floats up and fades
   // as the about section covers it, creating the "curtain reveal" feel
@@ -111,18 +104,6 @@ onMounted(() => {
       trigger: heroSectionRef.value,
       start: 'top top',
       end: 'bottom top',
-      scrub: true,
-    },
-  })
-
-  // Scroll indicator fades out as the curtain lifts
-  gsap.to(scrollIndicatorRef.value, {
-    opacity: 0,
-    ease: 'none',
-    scrollTrigger: {
-      trigger: heroSectionRef.value,
-      start: 'top top',
-      end: 'top 40%',
       scrub: true,
     },
   })
@@ -240,17 +221,6 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- Scroll indicator -->
-    <a
-      ref="scrollIndicatorRef"
-      href="#about"
-      class="absolute bottom-24 left-1/2 -translate-x-1/2 text-secondary-400 hover:text-primary-400 light:text-secondary-500 light:hover:text-primary-600 transition-colors duration-200 drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)] light:drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)]"
-      aria-label="Scroll down"
-    >
-      <svg class="w-6 h-6 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-      </svg>
-    </a>
   </section>
 </template>
 

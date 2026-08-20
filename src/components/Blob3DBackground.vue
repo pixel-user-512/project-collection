@@ -504,8 +504,53 @@ onMounted(() => {
 
   const handleMouseLeave = () => { mouseInside = false }
 
+  // --- Touch support for mobile/tablet swipe ----------------------
+  const handleTouchStart = (e) => {
+    if (e.touches.length > 0) {
+      const touch = e.touches[0]
+      const nx = (touch.clientX / window.innerWidth) * 2 - 1
+      const ny = -((touch.clientY / window.innerHeight) * 2 - 1)
+      prevMouse.set(nx, ny)
+      mouseTarget.set(nx, ny)
+      mouseInside = true
+    }
+  }
+
+  const handleTouchMove = (e) => {
+    if (e.touches.length > 0) {
+      const touch = e.touches[0]
+      const nx = (touch.clientX / window.innerWidth) * 2 - 1
+      const ny = -((touch.clientY / window.innerHeight) * 2 - 1)
+
+      const dx = nx - prevMouse.x
+      const dy = ny - prevMouse.y
+      const mag = Math.hypot(dx, dy)
+
+      if (mag > 0.0008) {
+        // Blend the travel direction so it doesn't jitter
+        smoothedDir.x += (dx / mag - smoothedDir.x) * 0.25
+        smoothedDir.y += (dy / mag - smoothedDir.y) * 0.25
+        const dl = Math.hypot(smoothedDir.x, smoothedDir.y) || 1
+        smoothedDir.x /= dl
+        smoothedDir.y /= dl
+
+        // Accumulate speed, clamped
+        mouseSpeed = Math.min(1, mouseSpeed + mag * 7.0)
+      }
+
+      prevMouse.set(nx, ny)
+      mouseTarget.set(nx, ny)
+      mouseInside = true
+    }
+  }
+
+  const handleTouchEnd = () => { mouseInside = false }
+
   window.addEventListener('mousemove', handleMouseMove, { passive: true })
   document.addEventListener('mouseleave', handleMouseLeave)
+  window.addEventListener('touchstart', handleTouchStart, { passive: true })
+  window.addEventListener('touchmove', handleTouchMove, { passive: true })
+  window.addEventListener('touchend', handleTouchEnd, { passive: true })
 
   // --- Scroll ----------------------------------------------------
   let isVisible = true
@@ -630,6 +675,9 @@ onMounted(() => {
     window.removeEventListener('resize', handleResize)
     window.removeEventListener('mousemove', handleMouseMove)
     document.removeEventListener('mouseleave', handleMouseLeave)
+    window.removeEventListener('touchstart', handleTouchStart)
+    window.removeEventListener('touchmove', handleTouchMove)
+    window.removeEventListener('touchend', handleTouchEnd)
     window.removeEventListener('colorpalettechange', applyPalette)
     quad.geometry.dispose()
     material.dispose()

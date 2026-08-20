@@ -181,10 +181,8 @@ onMounted(() => {
   }
   mediaQuery.addEventListener('change', handleMediaChange)
 
-  // Section title and subtitle reveal - horizontal slide from left
+  // Section title reveal - horizontal slide from left
   scrollTriggers.push(...useHorizontalSlideReveal(titleRef.value, { x: -120, start: 'top 90%', end: 'top 40%' }))
-  scrollTriggers.push(...useHorizontalSlideReveal(subtitleRef.value, { x: -120, start: 'top 90%', end: 'top 40%' }))
-  scrollTriggers.push(...useHorizontalSlideReveal(filterRef.value, { x: -100, start: 'top 90%', end: 'top 30%' }))
   scrollTriggers.push(...useAppleTextReveal(wheelContainerRef.value, { y: 60, duration: 1.2, start: 'top 80%', blur: 14 }))
 
   // Set up grid scroll progress tracking
