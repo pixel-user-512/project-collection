@@ -498,11 +498,25 @@ export function useMouseLavaStreak(options = {}) {
   const mouse = { x: window.innerWidth / 2, y: window.innerHeight / 2 }
   const prevMouse = { x: mouse.x, y: mouse.y }
   const particles = [] // Array of dust particles
+  let isPointerDown = false
+  let mouseIdleTimer = null
 
-  // Track mouse position
+  // Track mouse position. On desktop, hovering (moving the mouse) shows the trail.
+  // A short idle timer fades it out when the mouse stops moving.
   const handleMouseMove = (e) => {
     mouse.x = e.clientX
     mouse.y = e.clientY
+    isPointerDown = true
+    clearTimeout(mouseIdleTimer)
+    mouseIdleTimer = setTimeout(() => {
+      isPointerDown = false
+    }, 200)
+  }
+
+  // When the mouse leaves the window, hide the trail immediately
+  const handleMouseLeave = () => {
+    isPointerDown = false
+    clearTimeout(mouseIdleTimer)
   }
 
   // Track touch position for mobile/tablet swipe support
@@ -513,13 +527,36 @@ export function useMouseLavaStreak(options = {}) {
     }
   }
 
+  const handleMouseDown = () => {
+    isPointerDown = true
+    clearTimeout(mouseIdleTimer)
+  }
+
+  const handleMouseUp = () => {
+    // Keep the trail visible if the mouse is still over the page;
+    // the idle timer will fade it out shortly after movement stops
+    clearTimeout(mouseIdleTimer)
+    mouseIdleTimer = setTimeout(() => {
+      isPointerDown = false
+    }, 200)
+  }
+
   const handleTouchStart = (e) => {
     if (e.touches.length > 0) {
       mouse.x = e.touches[0].clientX
       mouse.y = e.touches[0].clientY
       prevMouse.x = mouse.x
       prevMouse.y = mouse.y
+      isPointerDown = true
     }
+  }
+
+  const handleTouchEnd = () => {
+    isPointerDown = false
+  }
+
+  const handleTouchCancel = () => {
+    isPointerDown = false
   }
 
   // Lava core pulse animation - slow, organic breathing like a lava lamp
@@ -543,30 +580,32 @@ export function useMouseLavaStreak(options = {}) {
     const dy = mouse.y - prevMouse.y
     const speed = Math.sqrt(dx * dx + dy * dy)
 
-    // Spawn dust particles at the mouse position
-    // Spawn rate scales with speed, but stays gentle even when idle
-    const spawnCount = Math.max(1, Math.min(4, Math.floor(speed * 0.15) + 1))
-    for (let i = 0; i < spawnCount; i++) {
-      // Small random offset so particles don't all stack at the exact point
-      const angle = Math.random() * Math.PI * 2
-      const dist = Math.random() * size * 0.4
-      particles.push({
-        x: mouse.x + Math.cos(angle) * dist,
-        y: mouse.y + Math.sin(angle) * dist,
-        // Slow, gentle drift - particles float lazily
-        vx: (Math.random() - 0.5) * 0.4,
-        vy: (Math.random() - 0.5) * 0.4,
-        // Random size for a varied dust cloud
-        radius: (Math.random() * 0.6 + 0.4) * (trailWidth * 0.35),
-        // Long, slow fade - particles linger like dust in the air
-        life: 1,
-        decay: 0.004 + Math.random() * 0.004,
-        // Random color from the lava palette
-        colorIndex: Math.floor(Math.random() * 4),
-        // Slight random rotation for swirling motion
-        swirl: (Math.random() - 0.5) * 0.02,
-        angle: Math.random() * Math.PI * 2,
-      })
+    // Spawn dust particles at the mouse position only while pointer is down
+    if (isPointerDown) {
+      // Spawn rate scales with speed, but stays gentle even when idle
+      const spawnCount = Math.max(1, Math.min(4, Math.floor(speed * 0.15) + 1))
+      for (let i = 0; i < spawnCount; i++) {
+        // Small random offset so particles don't all stack at the exact point
+        const angle = Math.random() * Math.PI * 2
+        const dist = Math.random() * size * 0.4
+        particles.push({
+          x: mouse.x + Math.cos(angle) * dist,
+          y: mouse.y + Math.sin(angle) * dist,
+          // Slow, gentle drift - particles float lazily
+          vx: (Math.random() - 0.5) * 0.4,
+          vy: (Math.random() - 0.5) * 0.4,
+          // Random size for a varied dust cloud
+          radius: (Math.random() * 0.6 + 0.4) * (trailWidth * 0.35),
+          // Long, slow fade - particles linger like dust in the air
+          life: 1,
+          decay: 0.004 + Math.random() * 0.004,
+          // Random color from the lava palette
+          colorIndex: Math.floor(Math.random() * 4),
+          // Slight random rotation for swirling motion
+          swirl: (Math.random() - 0.5) * 0.02,
+          angle: Math.random() * Math.PI * 2,
+        })
+      }
     }
 
     // Limit total particles
@@ -607,57 +646,59 @@ export function useMouseLavaStreak(options = {}) {
       ctx.fill()
     }
 
-    // Draw the lava lamp core at the mouse position
-    const time = Date.now() / 1000
-    // Slow, organic pulse like molten lava rising in a lamp
-    const pulse = 1 + Math.sin(time * 3) * 0.08 + Math.sin(time * 7) * 0.05
-    // Subtle wobble for an organic, liquid feel
-    const wobbleX = Math.sin(time * 2.5) * 2
-    const wobbleY = Math.cos(time * 2.1) * 2
+    // Draw the lava lamp core at the mouse position only while pointer is down
+    if (isPointerDown) {
+      const time = Date.now() / 1000
+      // Slow, organic pulse like molten lava rising in a lamp
+      const pulse = 1 + Math.sin(time * 3) * 0.08 + Math.sin(time * 7) * 0.05
+      // Subtle wobble for an organic, liquid feel
+      const wobbleX = Math.sin(time * 2.5) * 2
+      const wobbleY = Math.cos(time * 2.1) * 2
 
-    // Get palette colors for the core glow
-    const { outerGlow: outerColors, midGlow: midColors, coreGlow: coreColors } = getPaletteColors()
+      // Get palette colors for the core glow
+      const { outerGlow: outerColors, midGlow: midColors, coreGlow: coreColors } = getPaletteColors()
 
-    // Wide outer glow - palette halo
-    const outerGlow = ctx.createRadialGradient(
-      mouse.x + wobbleX, mouse.y + wobbleY, 0,
-      mouse.x + wobbleX, mouse.y + wobbleY, size * 1.5 * pulse
-    )
-    outerGlow.addColorStop(0, `rgba(${outerColors[0]}, 0.3)`)
-    outerGlow.addColorStop(0.4, `rgba(${outerColors[1]}, 0.18)`)
-    outerGlow.addColorStop(0.7, `rgba(${outerColors[2]}, 0.08)`)
-    outerGlow.addColorStop(1, `rgba(${outerColors[3]}, 0)`)
-    ctx.beginPath()
-    ctx.arc(mouse.x + wobbleX, mouse.y + wobbleY, size * 1.5 * pulse, 0, Math.PI * 2)
-    ctx.fillStyle = outerGlow
-    ctx.fill()
+      // Wide outer glow - palette halo
+      const outerGlow = ctx.createRadialGradient(
+        mouse.x + wobbleX, mouse.y + wobbleY, 0,
+        mouse.x + wobbleX, mouse.y + wobbleY, size * 1.5 * pulse
+      )
+      outerGlow.addColorStop(0, `rgba(${outerColors[0]}, 0.3)`)
+      outerGlow.addColorStop(0.4, `rgba(${outerColors[1]}, 0.18)`)
+      outerGlow.addColorStop(0.7, `rgba(${outerColors[2]}, 0.08)`)
+      outerGlow.addColorStop(1, `rgba(${outerColors[3]}, 0)`)
+      ctx.beginPath()
+      ctx.arc(mouse.x + wobbleX, mouse.y + wobbleY, size * 1.5 * pulse, 0, Math.PI * 2)
+      ctx.fillStyle = outerGlow
+      ctx.fill()
 
-    // Mid glow - palette mid
-    const midGlow = ctx.createRadialGradient(
-      mouse.x + wobbleX, mouse.y + wobbleY, 0,
-      mouse.x + wobbleX, mouse.y + wobbleY, size * 0.7 * pulse
-    )
-    midGlow.addColorStop(0, `rgba(${midColors[0]}, 0.5)`)
-    midGlow.addColorStop(0.5, `rgba(${midColors[1]}, 0.3)`)
-    midGlow.addColorStop(1, `rgba(${midColors[2]}, 0)`)
-    ctx.beginPath()
-    ctx.arc(mouse.x + wobbleX, mouse.y + wobbleY, size * 0.7 * pulse, 0, Math.PI * 2)
-    ctx.fillStyle = midGlow
-    ctx.fill()
+      // Mid glow - palette mid
+      const midGlow = ctx.createRadialGradient(
+        mouse.x + wobbleX, mouse.y + wobbleY, 0,
+        mouse.x + wobbleX, mouse.y + wobbleY, size * 0.7 * pulse
+      )
+      midGlow.addColorStop(0, `rgba(${midColors[0]}, 0.5)`)
+      midGlow.addColorStop(0.5, `rgba(${midColors[1]}, 0.3)`)
+      midGlow.addColorStop(1, `rgba(${midColors[2]}, 0)`)
+      ctx.beginPath()
+      ctx.arc(mouse.x + wobbleX, mouse.y + wobbleY, size * 0.7 * pulse, 0, Math.PI * 2)
+      ctx.fillStyle = midGlow
+      ctx.fill()
 
-    // White-hot core - like the brightest part of the palette glow
-    const coreGlow = ctx.createRadialGradient(
-      mouse.x + wobbleX, mouse.y + wobbleY, 0,
-      mouse.x + wobbleX, mouse.y + wobbleY, size * 0.35 * pulse
-    )
-    coreGlow.addColorStop(0, `rgba(${coreColors[0]}, 0.85)`)
-    coreGlow.addColorStop(0.3, `rgba(${coreColors[1]}, 0.6)`)
-    coreGlow.addColorStop(0.7, `rgba(${coreColors[2]}, 0.25)`)
-    coreGlow.addColorStop(1, `rgba(${coreColors[3]}, 0)`)
-    ctx.beginPath()
-    ctx.arc(mouse.x + wobbleX, mouse.y + wobbleY, size * 0.35 * pulse, 0, Math.PI * 2)
-    ctx.fillStyle = coreGlow
-    ctx.fill()
+      // White-hot core - like the brightest part of the palette glow
+      const coreGlow = ctx.createRadialGradient(
+        mouse.x + wobbleX, mouse.y + wobbleY, 0,
+        mouse.x + wobbleX, mouse.y + wobbleY, size * 0.35 * pulse
+      )
+      coreGlow.addColorStop(0, `rgba(${coreColors[0]}, 0.85)`)
+      coreGlow.addColorStop(0.3, `rgba(${coreColors[1]}, 0.6)`)
+      coreGlow.addColorStop(0.7, `rgba(${coreColors[2]}, 0.25)`)
+      coreGlow.addColorStop(1, `rgba(${coreColors[3]}, 0)`)
+      ctx.beginPath()
+      ctx.arc(mouse.x + wobbleX, mouse.y + wobbleY, size * 0.35 * pulse, 0, Math.PI * 2)
+      ctx.fillStyle = coreGlow
+      ctx.fill()
+    }
 
     // Update previous mouse position
     prevMouse.x = mouse.x
@@ -665,14 +706,25 @@ export function useMouseLavaStreak(options = {}) {
   })
 
   window.addEventListener('mousemove', handleMouseMove)
+  window.addEventListener('mouseleave', handleMouseLeave)
+  window.addEventListener('mousedown', handleMouseDown)
+  window.addEventListener('mouseup', handleMouseUp)
   window.addEventListener('touchmove', handleTouchMove, { passive: true })
   window.addEventListener('touchstart', handleTouchStart, { passive: true })
+  window.addEventListener('touchend', handleTouchEnd, { passive: true })
+  window.addEventListener('touchcancel', handleTouchCancel, { passive: true })
 
   // Cleanup function
   return () => {
+    clearTimeout(mouseIdleTimer)
     window.removeEventListener('mousemove', handleMouseMove)
+    window.removeEventListener('mouseleave', handleMouseLeave)
+    window.removeEventListener('mousedown', handleMouseDown)
+    window.removeEventListener('mouseup', handleMouseUp)
     window.removeEventListener('touchmove', handleTouchMove)
     window.removeEventListener('touchstart', handleTouchStart)
+    window.removeEventListener('touchend', handleTouchEnd)
+    window.removeEventListener('touchcancel', handleTouchCancel)
     window.removeEventListener('resize', resizeCanvas)
     window.removeEventListener('colorpalettechange', refreshPalette)
     gsap.ticker.remove(drawAnimation)

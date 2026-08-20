@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { gsap } from 'gsap'
 import ProjectPreview from './ProjectPreview.vue'
+import { useTheme } from '../composables/useTheme'
 
 const props = defineProps({
   projects: {
@@ -11,6 +12,8 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['open'])
+
+const { isDark } = useTheme()
 
 const wheelRef = ref(null)
 const currentIndex = ref(0)
@@ -27,7 +30,7 @@ let wasDragging = false
 
 const CARD_WIDTH = 300
 const CARD_HEIGHT = 380
-const MAX_VISIBLE_OFFSET = 3
+const MAX_VISIBLE_OFFSET = 2
 
 // Base scale curve: scale(u) = SCALE_MIN + SCALE_RANGE * (1 - u / MAX_VISIBLE_OFFSET)
 const SCALE_MIN = 0.6
@@ -70,7 +73,7 @@ const setupWheel = async () => {
       transformOrigin: 'center center',
       willChange: 'transform, opacity',
       borderRadius: '1rem',
-      boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
+      boxShadow: isDark.value ? '0 10px 30px rgba(0,0,0,0.3)' : 'none',
       cursor: 'pointer',
       backgroundColor: 'rgb(var(--color-secondary-800))',
     })
@@ -106,7 +109,9 @@ const getCardTransform = (index) => {
   const offset = normalized / angleStep
   const absOffset = Math.abs(offset)
   const clamped = Math.min(absOffset, MAX_VISIBLE_OFFSET)
-  const visibility = Math.max(0, 1 - absOffset / MAX_VISIBLE_OFFSET)
+  // Use MAX_VISIBLE_OFFSET + 1 as divisor so cards at the max offset
+  // are still visible (5 cards total: center + 2 on each side)
+  const visibility = Math.max(0, 1 - absOffset / (MAX_VISIBLE_OFFSET + 1))
 
   // Flat arch effect: horizontal offset with an even arch curve (no 3D rotation)
   // Spacing follows the scale curve so every card sits an equal visual distance apart
@@ -167,19 +172,25 @@ const updateCardStates = (instant = false, bounce = false) => {
       }
     }
 
+    // In light mode, visible cards stay fully opaque (even the ones in the back),
+    // but cards beyond the visible range are still hidden
+    const finalOpacity = isDark.value
+      ? isHovered ? 1 : opacity > 0.05 ? opacity : 0
+      : opacity > 0.05 ? 1 : 0
+
     const vars = {
       x: finalX,
       y: finalY,
       scale: finalScale,
       rotation: finalRotation,
-      opacity: isHovered ? 1 : opacity > 0.05 ? opacity : 0,
+      opacity: finalOpacity,
       zIndex: finalZ,
-      filter: isActive || isHovered ? 'brightness(1)' : 'brightness(0.6)',
+      filter: isActive || isHovered ? 'brightness(1)' : isDark.value ? 'brightness(0.6)' : 'brightness(0.85)',
       boxShadow: isHovered
         ? '0 25px 60px rgb(var(--color-primary-500) / 0.45)'
         : isActive
           ? '0 0 50px rgb(var(--color-primary-500) / 0.35)'
-          : '0 0 0px rgb(var(--color-primary-500) / 0)',
+          : isDark.value ? '0 0 0px rgb(var(--color-primary-500) / 0)' : 'none',
       pointerEvents: opacity > 0.05 ? 'auto' : 'none',
       duration,
       ease,
@@ -336,7 +347,7 @@ const handleWheelLeave = () => {
   handlePointerUp()
 }
 
-// Track pointer position on button for hover fill effect
+// Track pointer position on button for fill effect
 const handleMouseMove = (event) => {
   const button = event.currentTarget
   const fillOverlay = button.querySelector('.fill-overlay')
@@ -352,7 +363,64 @@ const handleMouseLeave = (event) => {
   const button = event.currentTarget
   button.style.setProperty('--mx', '50%')
   button.style.setProperty('--my', '50%')
+  // Also fade out the fill overlay on mouse leave (desktop)
+  if (isHoverDevice) {
+    const fillOverlay = button.querySelector('.fill-overlay')
+    if (fillOverlay) {
+      fillOverlay.classList.remove('active')
+      fillOverlay.classList.add('fade-out')
+      setTimeout(() => {
+        fillOverlay.classList.remove('fade-out')
+      }, 500)
+    }
+  }
 }
+
+// Detect if the device supports hover (desktop) vs touch-only
+const isHoverDevice = window.matchMedia('(hover: hover)').matches
+
+// Show fill overlay on pointer down (touch devices)
+const handleFillPointerDown = (event) => {
+  if (isHoverDevice) return // desktop uses hover instead
+  const button = event.currentTarget
+  const fillOverlay = button.querySelector('.fill-overlay')
+  if (!fillOverlay) return
+  const rect = button.getBoundingClientRect()
+  const x = event.clientX - rect.left
+  const y = event.clientY - rect.top
+  button.style.setProperty('--mx', `${x}px`)
+  button.style.setProperty('--my', `${y}px`)
+  fillOverlay.classList.add('active')
+}
+
+// Fade out fill overlay on pointer up (touch devices)
+const handleFillPointerUp = (event) => {
+  if (isHoverDevice) return // desktop uses hover instead
+  const button = event.currentTarget
+  const fillOverlay = button.querySelector('.fill-overlay')
+  if (!fillOverlay) return
+  fillOverlay.classList.remove('active')
+  fillOverlay.classList.add('fade-out')
+  // Reset classes after the fade-out transition completes
+  setTimeout(() => {
+    fillOverlay.classList.remove('fade-out')
+  }, 500)
+}
+
+// Show fill overlay on hover (desktop)
+const handleFillMouseEnter = (event) => {
+  if (!isHoverDevice) return
+  const button = event.currentTarget
+  const fillOverlay = button.querySelector('.fill-overlay')
+  if (!fillOverlay) return
+  const rect = button.getBoundingClientRect()
+  const x = event.clientX - rect.left
+  const y = event.clientY - rect.top
+  button.style.setProperty('--mx', `${x}px`)
+  button.style.setProperty('--my', `${y}px`)
+  fillOverlay.classList.add('active')
+}
+
 
 onMounted(async () => {
   await setupWheel()
@@ -364,6 +432,13 @@ watch(
     await setupWheel()
   }
 )
+
+// Re-apply card states when theme changes so GSAP inline styles (filter, boxShadow) update
+watch(isDark, () => {
+  if (cardElements.length > 0) {
+    updateCardStates(true)
+  }
+})
 </script>
 
 <template>
@@ -373,12 +448,16 @@ watch(
       @click="rotateWheel(-1)"
       @mousemove="handleMouseMove"
       @mouseleave="handleMouseLeave"
+      @mouseenter="handleFillMouseEnter"
+      @pointerdown="handleFillPointerDown"
+      @pointerup="handleFillPointerUp"
+      @pointercancel="handleFillPointerUp"
       :disabled="!canNavigate"
-      class="absolute -left-40 top-1/2 -translate-y-1/2 size-[300px] rounded-full flex items-center justify-center text-secondary-300 light:text-secondary-500 disabled:opacity-40 disabled:cursor-not-allowed z-[110] border-2 border-primary-500/50 light:border-primary-600/50 hover:border-primary-500 light:hover:border-primary-600 hover:scale-105 transition-all duration-300 overflow-hidden"
+      class="absolute -left-24 md:-left-24 lg:-left-40 top-1/2 -translate-y-1/2 size-[200px] md:size-[200px] lg:size-[300px] rounded-full flex items-center justify-center text-secondary-300 light:text-secondary-500 disabled:opacity-40 disabled:cursor-not-allowed z-[110] border-2 border-primary-500/50 light:border-primary-600/50 hover:border-primary-500 light:hover:border-primary-600 hover:scale-105 transition-all duration-300 overflow-hidden"
       aria-label="Previous project"
     >
       <span class="fill-overlay"></span>
-      <svg class="absolute z-10 w-10 h-10 right-16 top-1/2 -translate-y-1/2 text-primary-500 light:text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg class="absolute z-10 w-8 h-8 md:w-8 md:h-8 lg:w-10 lg:h-10 right-10 md:right-10 lg:right-16 top-1/2 -translate-y-1/2 text-primary-500 light:text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 12H5M12 19l-7-7 7-7" />
       </svg>
     </button>
@@ -399,12 +478,12 @@ watch(
         @click="selectCard(index)"
         @mouseenter="handleCardEnter(index)"
         @mouseleave="handleCardLeave(index)"
-        class="absolute rounded-xl overflow-hidden shadow-xl"
+        class="absolute rounded-xl overflow-hidden shadow-xl light:shadow-none"
         style="width: 300px; height: 360px;"
       >
         <div class="relative overflow-hidden rounded-t-xl h-48">
           <ProjectPreview :project="project" class="w-full h-full" />
-          <div class="absolute inset-0 bg-gradient-to-t from-dark-900/80 to-transparent rounded-t-xl pointer-events-none"></div>
+          <div v-if="isDark" class="absolute inset-0 bg-gradient-to-t from-dark-900/80 to-transparent rounded-t-xl pointer-events-none"></div>
         </div>
         <div class="p-5 bg-secondary-800 h-full light:bg-white rounded-b-xl">
           <h3 class="text-white light:text-secondary-900 font-semibold text-lg mb-2">
@@ -431,12 +510,16 @@ watch(
       @click="rotateWheel(1)"
       @mousemove="handleMouseMove"
       @mouseleave="handleMouseLeave"
+      @mouseenter="handleFillMouseEnter"
+      @pointerdown="handleFillPointerDown"
+      @pointerup="handleFillPointerUp"
+      @pointercancel="handleFillPointerUp"
       :disabled="!canNavigate"
-      class="absolute -right-40 top-1/2 -translate-y-1/2 size-[300px] rounded-full flex items-center justify-center text-secondary-300 light:text-secondary-500 disabled:opacity-40 disabled:cursor-not-allowed z-[110] border-2 border-primary-500/50 light:border-primary-600/50 hover:border-primary-500 light:hover:border-primary-600 hover:scale-105 transition-all duration-300 overflow-hidden"
+      class="absolute -right-24 md:-right-24 lg:-right-40 top-1/2 -translate-y-1/2 size-[200px] md:size-[200px] lg:size-[300px] rounded-full flex items-center justify-center text-secondary-300 light:text-secondary-500 disabled:opacity-40 disabled:cursor-not-allowed z-[110] border-2 border-primary-500/50 light:border-primary-600/50 hover:border-primary-500 light:hover:border-primary-600 hover:scale-105 transition-all duration-300 overflow-hidden"
       aria-label="Next project"
     >
       <span class="fill-overlay"></span>
-      <svg class="absolute z-10 w-10 h-10 left-16 top-1/2 -translate-y-1/2 text-primary-500 light:text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg class="absolute z-10 w-8 h-8 md:w-8 md:h-8 lg:w-10 lg:h-10 left-10 md:left-10 lg:left-16 top-1/2 -translate-y-1/2 text-primary-500 light:text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 12h14M12 5l7 7-7 7" />
       </svg>
     </button>
@@ -456,25 +539,38 @@ watch(
 <style scoped>
 .fill-overlay {
   position: absolute;
-  width: 300px;
-  height: 300px;
+  width: 200px;
+  height: 200px;
   border-radius: 9999px;
   background: rgb(var(--color-primary-500) / 0.9);
   left: var(--mx, 50%);
   top: var(--my, 50%);
   transform: translate(-50%, -50%) scale(0);
   opacity: 0;
-  transition: transform 0.5s ease-out, opacity 0.3s ease;
+  transition: transform 0.4s ease-out, opacity 0.3s ease;
   pointer-events: none;
 }
 
-button:hover .fill-overlay {
+.fill-overlay.active {
   opacity: 1;
   transform: translate(-50%, -50%) scale(1);
 }
 
-button:hover svg {
+.fill-overlay.fade-out {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0);
+  transition: transform 0.5s ease-in, opacity 0.4s ease;
+}
+
+@media (min-width: 1024px) {
+  .fill-overlay {
+    width: 300px;
+    height: 300px;
+  }
+}
+
+button:active svg {
   color: #ffffff;
-  transition: color 0.3s ease;
+  transition: color 0.2s ease;
 }
 </style>
