@@ -260,7 +260,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <section id="about" class="pt-40 sm:pt-48 md:pt-56 pb-20 relative overflow-x-clip">
+  <section id="about" class="pt-40 sm:pt-48 md:pt-56 pb-20 relative">
     <!-- SVG clip path definition for the concave-up top edge.
          The background layer below is clipped to this shape, so the
          concave dip at the top is transparent - letting the hero's
@@ -383,7 +383,7 @@ onUnmounted(() => {
         </div>
 
         <!-- Card stack view -->
-        <div v-else ref="stackRef" class="order-2 lg:order-2 relative h-[24rem] sm:h-[22rem] select-none">
+        <div v-else ref="stackRef" class="order-2 lg:order-2 relative h-[12rem] sm:h-[18rem] w-full max-w-[20rem] sm:max-w-none mx-auto select-none">
           <div
             v-for="(item, index) in highlights"
             :key="item.title"
@@ -404,8 +404,8 @@ onUnmounted(() => {
             <div class="absolute inset-x-0 bottom-0 h-3/4 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none"></div>
 
             <!-- Content at the bottom -->
-            <div class="absolute inset-x-0 bottom-0 p-6 pointer-events-none">
-              <h3 class="text-white font-bold text-2xl mb-2 drop-shadow-lg">
+            <div class="absolute inset-x-0 bottom-0 p-4 sm:p-6 pointer-events-none">
+              <h3 class="text-white font-bold text-lg sm:text-2xl mb-1 sm:mb-2 drop-shadow-lg">
                 <template v-if="item.value !== undefined">
                   <span :data-count="item.value">{{ item.value }}</span>{{ item.suffix }} {{ item.title }}
                 </template>
@@ -413,7 +413,7 @@ onUnmounted(() => {
                   {{ item.title }}
                 </template>
               </h3>
-              <p class="text-white/80 text-sm drop-shadow">{{ item.description }}</p>
+              <p class="text-white/80 text-xs sm:text-sm drop-shadow">{{ item.description }}</p>
             </div>
           </div>
         </div>
