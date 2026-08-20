@@ -184,7 +184,8 @@ const setupCardStack = () => {
       if (absX > threshold || absY > threshold) {
         const directionX = currentX > 0 ? 1 : -1
         const directionY = currentY > 0 ? 1 : -1
-        const swipeX = directionX * (window.innerWidth * 0.6)
+        // Constrain swipe distance to prevent horizontal page overflow on mobile
+        const swipeX = directionX * Math.min(Math.abs(currentX) + 100, window.innerWidth * 0.35)
         const swipeY = directionY * 200
 
         gsap.to(card, {
@@ -259,7 +260,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <section id="about" class="pt-40 sm:pt-48 md:pt-56 pb-20 relative">
+  <section id="about" class="pt-40 sm:pt-48 md:pt-56 pb-20 relative overflow-x-clip">
     <!-- SVG clip path definition for the concave-up top edge.
          The background layer below is clipped to this shape, so the
          concave dip at the top is transparent - letting the hero's

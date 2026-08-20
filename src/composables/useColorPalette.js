@@ -3,6 +3,27 @@ import { ref, watch } from 'vue'
 // Define available color palettes
 // Each palette provides primary, accent, and secondary color scales
 export const colorPalettes = {
+  goldenHour: {
+    name: 'Lime',
+    primary: {
+      50: '#fafff0', 100: '#f2ffd6', 200: '#e6ffad', 300: '#daff7a',
+      400: '#d2ff02', 500: '#bde602', 600: '#9ebf02', 700: '#7e9901',
+      800: '#5f7301', 900: '#3f4d01',
+    },
+    accent: {
+      50: '#fafff0', 100: '#f2ffd6', 200: '#e6ffad', 300: '#daff7a',
+      400: '#d2ff02', 500: '#bde602', 600: '#9ebf02', 700: '#7e9901',
+      800: '#5f7301', 900: '#3f4d01',
+    },
+    secondary: {
+      50: '#fafaf9', 100: '#f5f5f4', 200: '#e7e5e4', 300: '#d6d3d1',
+      400: '#a8a29e', 500: '#78716c', 600: '#57534e', 700: '#44403c',
+      800: '#292524', 900: '#1c1917',
+    },
+    dark: {
+      700: '#44403c', 800: '#292524', 900: '#1c1917',
+    },
+  },
   emerald: {
     name: 'Emerald',
     primary: {
@@ -129,27 +150,6 @@ export const colorPalettes = {
       700: '#44403c', 800: '#292524', 900: '#1c1917',
     },
   },
-  goldenHour: {
-    name: 'Lime',
-    primary: {
-      50: '#fafff0', 100: '#f2ffd6', 200: '#e6ffad', 300: '#daff7a',
-      400: '#d2ff02', 500: '#bde602', 600: '#9ebf02', 700: '#7e9901',
-      800: '#5f7301', 900: '#3f4d01',
-    },
-    accent: {
-      50: '#fafff0', 100: '#f2ffd6', 200: '#e6ffad', 300: '#daff7a',
-      400: '#d2ff02', 500: '#bde602', 600: '#9ebf02', 700: '#7e9901',
-      800: '#5f7301', 900: '#3f4d01',
-    },
-    secondary: {
-      50: '#fafaf9', 100: '#f5f5f4', 200: '#e7e5e4', 300: '#d6d3d1',
-      400: '#a8a29e', 500: '#78716c', 600: '#57534e', 700: '#44403c',
-      800: '#292524', 900: '#1c1917',
-    },
-    dark: {
-      700: '#44403c', 800: '#292524', 900: '#1c1917',
-    },
-  },
   moonlit: {
     name: 'Silver',
     primary: {
@@ -201,7 +201,7 @@ const hexToRgb = (hex) => {
   return `${parseInt(result[1], 16)} ${parseInt(result[2], 16)} ${parseInt(result[3], 16)}`
 }
 
-const selectedPalette = ref('sunset')
+const selectedPalette = ref('goldenHour')
 
 // Apply the palette as CSS custom properties on :root
 // Values are stored as RGB triplets for Tailwind's rgb(var(--x) / <alpha-value>) syntax
@@ -232,13 +232,13 @@ const applyPalette = (paletteKey) => {
   })
 }
 
-// Initialize palette from localStorage or default to sunset
+// Initialize palette from localStorage or default to lime
 const initPalette = () => {
   const saved = localStorage.getItem('colorPalette')
   if (saved && colorPalettes[saved]) {
     selectedPalette.value = saved
   } else {
-    selectedPalette.value = 'sunset'
+    selectedPalette.value = 'goldenHour'
   }
   applyPalette(selectedPalette.value)
 }
