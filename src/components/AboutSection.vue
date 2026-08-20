@@ -158,11 +158,12 @@ const setupCardStack = () => {
       startY = point.clientY
       currentX = 0
       currentY = 0
-      // Capture the card's viewport bounds so we can clamp the drag
-      // to keep the card fully within the visible viewport
+      // Capture the card and container bounds so we can clamp the drag
+      // to keep the card fully within the container
       const rect = card.getBoundingClientRect()
-      maxDragLeft = rect.left
-      maxDragRight = window.innerWidth - rect.right
+      const containerRect = stackRef.value.getBoundingClientRect()
+      maxDragLeft = rect.left - containerRect.left
+      maxDragRight = containerRect.right - rect.right
       gsap.killTweensOf(card)
       gsap.set(card, { cursor: 'grabbing' })
     }
@@ -393,7 +394,7 @@ onUnmounted(() => {
         </div>
 
         <!-- Card stack view -->
-        <div v-else ref="stackRef" class="order-2 lg:order-2 relative h-[12rem] sm:h-[18rem] w-full sm:ml-0  sm:w-full sm:max-w-none select-none">
+        <div v-else ref="stackRef" class="order-2 lg:order-2 relative h-[12rem] sm:h-[18rem] w-full sm:max-w-none select-none">
           <div
             v-for="(item, index) in highlights"
             :key="item.title"
