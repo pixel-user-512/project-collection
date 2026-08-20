@@ -1,6 +1,10 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useAppleTextReveal, useHorizontalSlideReveal } from '../composables/useGsap'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { gsap } from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { useHorizontalSlideReveal } from '../composables/useGsap'
+
+gsap.registerPlugin(ScrollTrigger)
 
 const START_DATE = new Date('2021-09-01')
 
@@ -13,51 +17,244 @@ const yearsOfExperience = computed(() => {
 
 const highlights = computed(() => [
   {
-    title: `${yearsOfExperience.value}+ Years Experience`,
+    value: yearsOfExperience.value,
+    suffix: '+',
+    title: 'Years Work Experience',
     description: 'Building production-ready web applications',
     icon: '💼',
+    image: 'https://images.unsplash.com/photo-1550859492-d5da9d8e45f3?w=600&q=80',
+    bgClass: 'bg-secondary-800 light:bg-white',
   },
   {
-    title: '50+ Projects Delivered',
-    description: 'From small startups to enterprise solutions',
+    value: 50,
+    suffix: '+',
+    title: 'Projects Delivered',
+    description: 'Scalable, maintainable, and user-friendly applications',
     icon: '🚀',
+    image: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&q=80',
+    bgClass: 'bg-secondary-700 light:bg-secondary-50',
   },
   {
-    title: 'Clean Code Advocate',
-    description: 'Writing maintainable, testable, and scalable code',
-    icon: '✨',
+    title: 'Creative Designer',
+    description: 'Crafting visually stunning and memorable experiences',
+    icon: '🎨',
+    image: 'https://images.unsplash.com/photo-1557672172-298e090bd0f1?w=600&q=80',
+    bgClass: 'bg-secondary-600 light:bg-secondary-100',
   },
   {
     title: 'Continuous Learner',
     description: 'Always exploring new technologies and best practices',
     icon: '📚',
+    image: 'https://images.unsplash.com/photo-1614850715649-1d0106293bd1?w=600&q=80',
+    bgClass: 'bg-secondary-500 light:bg-secondary-200',
   },
 ])
 
 const titleRef = ref(null)
 const textRef = ref(null)
-const cardsRef = ref(null)
+const gridRef = ref(null)
+const stackRef = ref(null)
+const viewMode = ref('stack')
 
 let scrollTriggers = []
+let countTweens = []
+let dragCleanups = []
+
+// GSAP counting animation for the numeric highlight cards
+const setupCountUpAnimation = () => {
+  const container = viewMode.value === 'stack' ? stackRef.value : gridRef.value
+  if (!container) return
+
+  // Kill any existing count tweens first
+  countTweens.forEach((tween) => {
+    tween.scrollTrigger?.kill()
+    tween.kill()
+  })
+  countTweens = []
+
+  const counters = container.querySelectorAll('[data-count]')
+
+  counters.forEach((counter) => {
+    const target = parseInt(counter.dataset.count, 10)
+    const obj = { val: 0 }
+
+    const tween = gsap.to(obj, {
+      val: target,
+      duration: Math.max(0.5, target * 0.04),
+      ease: 'power2.out',
+      scrollTrigger: {
+        trigger: counter,
+        start: 'top 85%',
+        once: true,
+      },
+      onUpdate: () => {
+        counter.textContent = Math.floor(obj.val)
+      },
+    })
+    countTweens.push(tween)
+  })
+}
+
+// Set up the draggable/swipeable card stack
+const setupCardStack = () => {
+  if (!stackRef.value) return
+
+  // Clean up previous drag listeners
+  dragCleanups.forEach((cleanup) => cleanup())
+  dragCleanups = []
+
+  const cards = Array.from(stackRef.value.querySelectorAll('.stack-card'))
+  if (cards.length === 0) return
+
+  // Messy rotations and offsets for the card stack
+  const rotations = [-6, 4, -3, 2]
+  const offsets = [0, 8, 16, 24]
+
+  // Apply stack positions to all cards based on their index
+  const applyStackPositions = () => {
+    cards.forEach((card, i) => {
+      if (i === 0) {
+        gsap.to(card, {
+          x: 0,
+          y: 0,
+          rotation: 0,
+          zIndex: cards.length - i,
+          duration: 0.3,
+          ease: 'power2.out',
+        })
+      } else {
+        gsap.to(card, {
+          x: 0,
+          y: offsets[i % offsets.length],
+          rotation: rotations[i % rotations.length],
+          zIndex: cards.length - i,
+          duration: 0.3,
+          ease: 'power2.out',
+        })
+      }
+    })
+  }
+
+  // Initial stack positions
+  applyStackPositions()
+
+  let isDragging = false
+  let startX = 0
+  let startY = 0
+  let currentX = 0
+  let currentY = 0
+
+  const setupDragOnCard = (card) => {
+    // Clean up previous listeners
+    dragCleanups.forEach((cleanup) => cleanup())
+    dragCleanups = []
+
+    const onDown = (e) => {
+      isDragging = true
+      const point = e.touches ? e.touches[0] : e
+      startX = point.clientX
+      startY = point.clientY
+      currentX = 0
+      currentY = 0
+      gsap.killTweensOf(card)
+      gsap.set(card, { cursor: 'grabbing' })
+    }
+
+    const onMove = (e) => {
+      if (!isDragging) return
+      const point = e.touches ? e.touches[0] : e
+      currentX = point.clientX - startX
+      currentY = point.clientY - startY
+      gsap.set(card, {
+        x: currentX,
+        y: currentY,
+        rotation: currentX * 0.05,
+      })
+    }
+
+    const onUp = () => {
+      if (!isDragging) return
+      isDragging = false
+      gsap.set(card, { cursor: 'grab' })
+
+      const threshold = 120
+      const absX = Math.abs(currentX)
+      const absY = Math.abs(currentY)
+
+      if (absX > threshold || absY > threshold) {
+        const directionX = currentX > 0 ? 1 : -1
+        const directionY = currentY > 0 ? 1 : -1
+        const swipeX = directionX * (window.innerWidth * 0.6)
+        const swipeY = directionY * 200
+
+        gsap.to(card, {
+          x: swipeX,
+          y: swipeY,
+          rotation: directionX * 20,
+          opacity: 0,
+          duration: 0.5,
+          ease: 'power2.in',
+          onComplete: () => {
+            gsap.set(card, { opacity: 1 })
+            cards.push(cards.shift())
+            applyStackPositions()
+            setupDragOnCard(cards[0])
+          },
+        })
+      } else {
+        gsap.to(card, {
+          x: 0,
+          y: 0,
+          rotation: 0,
+          duration: 0.4,
+          ease: 'power3.out',
+        })
+      }
+    }
+
+    card.addEventListener('pointerdown', onDown)
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+
+    dragCleanups.push(() => {
+      card.removeEventListener('pointerdown', onDown)
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+    })
+  }
+
+  // Initial setup on the first top card
+  setupDragOnCard(cards[0])
+}
+
+const setViewMode = (mode) => {
+  viewMode.value = mode
+  nextTick(() => {
+    if (mode === 'stack') {
+      setupCardStack()
+    }
+    setupCountUpAnimation()
+  })
+}
 
 onMounted(() => {
   // Section title reveal - horizontal slide from left
   scrollTriggers.push(...useHorizontalSlideReveal(titleRef.value, { x: -120, start: 'top 90%', end: 'top 40%' }))
 
-  // Highlight cards reveal with stagger - Apple style
-  scrollTriggers.push(
-    ...useAppleTextReveal(cardsRef.value, {
-      y: 60,
-      duration: 1.2,
-      stagger: 0.15,
-      start: 'top 80%',
-      blur: 14,
-    })
-  )
+  // Set up the card stack (default view)
+  setupCardStack()
+
+  // Set up number counting animation
+  setupCountUpAnimation()
 })
 
 onUnmounted(() => {
   scrollTriggers.forEach((trigger) => trigger.kill())
+  countTweens.forEach((tween) => {
+    tween.scrollTrigger?.kill()
+    tween.kill()
+  })
+  dragCleanups.forEach((cleanup) => cleanup())
 })
 </script>
 
@@ -101,50 +298,122 @@ onUnmounted(() => {
     </svg>
 
     <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <h2 ref="titleRef" class="section-title ">About Me</h2>
+      <div class="flex items-center justify-between mb-10">
+        <h2 ref="titleRef" class="section-title ">About Me</h2>
+
+        <!-- View Mode Toggle -->
+        <div class="flex items-center gap-1 p-1 rounded-lg bg-secondary-800 border border-secondary-700 light:bg-secondary-100 light:border-secondary-200">
+          <button
+            @click="setViewMode('grid')"
+            class="px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-300"
+            :class="
+              viewMode === 'grid'
+                ? 'bg-primary-600 text-white shadow-md shadow-primary-500/25'
+                : 'text-secondary-400 hover:text-white light:text-secondary-500 light:hover:text-secondary-900'
+            "
+            aria-label="Grid view"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+            </svg>
+          </button>
+          <button
+            @click="setViewMode('stack')"
+            class="px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-300"
+            :class="
+              viewMode === 'stack'
+                ? 'bg-primary-600 text-white shadow-md shadow-primary-500/25'
+                : 'text-secondary-400 hover:text-white light:text-secondary-500 light:hover:text-secondary-900'
+            "
+            aria-label="Stack view"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+        </div>
+      </div>
 
       <div class="grid lg:grid-cols-2 gap-12 items-start">
-        <!-- Highlight cards on the left -->
-        <div ref="cardsRef" class="grid sm:grid-cols-2 gap-6 order-2 lg:order-1">
+        <!-- Tech stack and description on the left -->
+        <div ref="textRef" class="order-1 lg:order-1">
+          <p class="text-secondary-300 light:text-secondary-700 text-lg leading-relaxed mb-6">
+            I build modern web applications that are as functional as they are beautiful. What started as a curiosity about the web has evolved into a career creating impactful digital products. 
+          </p>
+          <p class="text-secondary-400 light:text-secondary-500 leading-relaxed mb-8">
+            I specialize in the Vue.js ecosystem but I'm able to adjust to any framework, always prioritizing clean, maintainable code and highly intuitive user experiences.
+          </p>
+          <div class="flex flex-wrap gap-3">
+            <span
+              v-for="skill in ['Vue 3', 'JavaScript', 'TypeScript', 'Node.js', 'Tailwind CSS']"
+              :key="skill"
+              class="px-4 py-2 bg-secondary-800/50 border border-secondary-700 rounded-full text-sm text-secondary-300 hover:border-primary-500/50 hover:text-primary-400 light:bg-secondary-100 light:border-secondary-200 light:text-secondary-600 light:hover:border-primary-500/50 light:hover:text-primary-600 transition-all duration-300 hover:scale-105 cursor-default"
+            >
+              {{ skill }}
+            </span>
+            <span
+              v-for="skill in ['Git', 'Figma']"
+              :key="skill"
+              class="px-4 py-2 bg-secondary-800/50 border border-secondary-700 rounded-full text-sm text-secondary-300 hover:border-primary-500/50 hover:text-primary-400 light:bg-secondary-100 light:border-secondary-200 light:text-secondary-600 light:hover:border-primary-500/50 light:hover:text-primary-600 transition-all duration-300 hover:scale-105 cursor-default"
+            >
+              {{ skill }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Grid view -->
+        <div v-if="viewMode === 'grid'" ref="gridRef" class="order-2 lg:order-2 grid sm:grid-cols-2 gap-6">
           <div
             v-for="item in highlights"
             :key="item.title"
             class="group bg-secondary-800 border border-secondary-700 rounded-xl p-6 hover:border-primary-500/50 hover:shadow-xl hover:shadow-primary-500/10 hover:-translate-y-1 transition-all duration-300 light:bg-white light:border-secondary-200 light:hover:border-primary-500/50 light:hover:shadow-primary-500/10"
           >
             <div class="text-3xl mb-3 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300 inline-block">{{ item.icon }}</div>
-            <h3 class="text-white light:text-secondary-900 font-semibold mb-2">{{ item.title }}</h3>
+            <h3 class="text-white light:text-secondary-900 font-semibold mb-2 text-xl">
+              <template v-if="item.value !== undefined">
+                <span :data-count="item.value">{{ item.value }}</span>{{ item.suffix }}
+              </template>
+              <template v-else>
+                {{ item.title }}
+              </template>
+            </h3>
             <p class="text-secondary-400 light:text-secondary-500 text-sm">{{ item.description }}</p>
           </div>
         </div>
 
-        <!-- Tech stack and description on the right -->
-        <div ref="textRef" class="order-1 lg:order-2">
-          <p class="text-secondary-300 light:text-secondary-700 text-lg leading-relaxed mb-6">
-            I'm a passionate developer with a strong focus on building modern web applications
-            that are both functional and beautiful. My journey in software development started
-            with a curiosity for how things work on the web, and has evolved into a career
-            building products that make a difference.
-          </p>
-          <p class="text-secondary-400 light:text-secondary-500 leading-relaxed mb-8">
-            I specialize in the Vue.js ecosystem, but I'm comfortable working across the full
-            stack. I believe in writing clean, maintainable code and creating intuitive user
-            experiences that people love to use.
-          </p>
-          <div class="flex flex-wrap gap-3">
-            <span
-              v-for="skill in ['Vue 3', 'JavaScript', 'TypeScript', 'Node.js', 'Tailwind CSS', 'REST APIs']"
-              :key="skill"
-              class="px-4 py-2 bg-secondary-800/50 border border-secondary-700 rounded-full text-sm text-secondary-300 hover:border-primary-500/50 hover:text-primary-400 light:bg-secondary-100 light:border-secondary-200 light:text-secondary-600 light:hover:border-primary-500/50 light:hover:text-primary-600 transition-all duration-300 hover:scale-105 cursor-default"
-            >
-              {{ skill }}
-            </span>
-            <span
-              v-for="skill in ['Git', 'Docker', 'Figma']"
-              :key="skill"
-              class="px-4 py-2 bg-secondary-800/50 border border-secondary-700 rounded-full text-sm text-secondary-300 hover:border-primary-500/50 hover:text-primary-400 light:bg-secondary-100 light:border-secondary-200 light:text-secondary-600 light:hover:border-primary-500/50 light:hover:text-primary-600 transition-all duration-300 hover:scale-105 cursor-default"
-            >
-              {{ skill }}
-            </span>
+        <!-- Card stack view -->
+        <div v-else ref="stackRef" class="order-2 lg:order-2 relative h-[24rem] sm:h-[22rem] select-none">
+          <div
+            v-for="(item, index) in highlights"
+            :key="item.title"
+            class="stack-card absolute inset-0 group border border-secondary-700 rounded-xl overflow-hidden hover:border-primary-500/50 hover:shadow-xl hover:shadow-primary-500/10 transition-colors duration-300 light:border-secondary-200 light:hover:border-primary-500/50 light:hover:shadow-primary-500/10 cursor-grab active:cursor-grabbing touch-none"
+            :class="item.bgClass"
+            :style="{ zIndex: highlights.length - index }"
+          >
+            <!-- Lava lamp style image -->
+            <img
+              :src="item.image"
+              :alt="item.title"
+              class="absolute inset-0 w-full h-full object-cover pointer-events-none select-none"
+              loading="lazy"
+              draggable="false"
+            />
+
+            <!-- Fading dark gradient at the bottom -->
+            <div class="absolute inset-x-0 bottom-0 h-3/4 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none"></div>
+
+            <!-- Content at the bottom -->
+            <div class="absolute inset-x-0 bottom-0 p-6 pointer-events-none">
+              <h3 class="text-white font-bold text-2xl mb-2 drop-shadow-lg">
+                <template v-if="item.value !== undefined">
+                  <span :data-count="item.value">{{ item.value }}</span>{{ item.suffix }} {{ item.title }}
+                </template>
+                <template v-else>
+                  {{ item.title }}
+                </template>
+              </h3>
+              <p class="text-white/80 text-sm drop-shadow">{{ item.description }}</p>
+            </div>
           </div>
         </div>
       </div>

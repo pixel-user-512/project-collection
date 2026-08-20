@@ -65,6 +65,7 @@ export default {
         sans: ['"Mona Sans"', 'system-ui', 'sans-serif'],
         'boring-time': ['"Boring Time"', 'sans-serif'],
         griaste: ['"Griaste"', 'sans-serif'],
+        'matcha-mint': ['"Matcha Mint"', 'sans-serif'],
       },
     },
   },

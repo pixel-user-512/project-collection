@@ -174,9 +174,7 @@ const updateCardStates = (instant = false, bounce = false) => {
 
     // In light mode, visible cards stay fully opaque (even the ones in the back),
     // but cards beyond the visible range are still hidden
-    const finalOpacity = isDark.value
-      ? isHovered ? 1 : opacity > 0.05 ? opacity : 0
-      : opacity > 0.05 ? 1 : 0
+    const finalOpacity = opacity > 0.05 ? 1 : 0
 
     const vars = {
       x: finalX,
@@ -185,7 +183,7 @@ const updateCardStates = (instant = false, bounce = false) => {
       rotation: finalRotation,
       opacity: finalOpacity,
       zIndex: finalZ,
-      filter: isActive || isHovered ? 'brightness(1)' : isDark.value ? 'brightness(0.6)' : 'brightness(0.85)',
+      filter: isActive || isHovered ? 'brightness(1)' : isDark.value ? 'brightness(0.7)' : 'brightness(0.85)',
       boxShadow: isHovered
         ? '0 25px 60px rgb(var(--color-primary-500) / 0.45)'
         : isActive

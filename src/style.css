@@ -26,6 +26,14 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: 'Matcha Mint';
+  src: url('./assets/fonts/MatchaMint.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 @layer base {
   :root {
     /* Default Emerald palette - RGB triplets for Tailwind's rgb(var(--x) / <alpha-value>) */

@@ -198,8 +198,7 @@ onUnmounted(() => {
         ref="descriptionRef"
         class="light:text-black text-white text-lg mb-8 max-w-2xl mx-auto"
       >
-        I build modern, responsive web applications with clean code and great user experiences.
-        Passionate about turning ideas into reality through technology.
+        I build modern, responsive web applications. In every project, creating a seamless user experience is my primary focus.
       </p>
       <div ref="buttonsRef" class="flex flex-col sm:flex-row items-center justify-center gap-4">
         <a
