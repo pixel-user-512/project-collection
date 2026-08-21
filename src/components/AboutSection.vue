@@ -55,10 +55,20 @@ const textRef = ref(null)
 const gridRef = ref(null)
 const stackRef = ref(null)
 const viewMode = ref('stack')
+const isMobile = ref(false)
 
 let scrollTriggers = []
 let countTweens = []
 let dragCleanups = []
+let resizeHandler = null
+
+// Check viewport size - on mobile, force grid view and hide the stack
+const checkViewport = () => {
+  isMobile.value = window.innerWidth < 768 // md breakpoint
+  if (isMobile.value && viewMode.value === 'stack') {
+    viewMode.value = 'grid'
+  }
+}
 
 // GSAP counting animation for the numeric highlight cards
 const setupCountUpAnimation = () => {
@@ -158,12 +168,11 @@ const setupCardStack = () => {
       startY = point.clientY
       currentX = 0
       currentY = 0
-      // Capture the card and container bounds so we can clamp the drag
-      // to keep the card fully within the container
+      // Allow the card to be dragged within the viewport bounds
+      // so it can move freely on the x-axis on desktop
       const rect = card.getBoundingClientRect()
-      const containerRect = stackRef.value.getBoundingClientRect()
-      maxDragLeft = rect.left - containerRect.left
-      maxDragRight = containerRect.right - rect.right
+      maxDragLeft = rect.left
+      maxDragRight = window.innerWidth - rect.right
       gsap.killTweensOf(card)
       gsap.set(card, { cursor: 'grabbing' })
     }
@@ -175,9 +184,11 @@ const setupCardStack = () => {
       currentY = point.clientY - startY
       // Clamp horizontal drag to keep the card within the viewport
       currentX = Math.max(-maxDragLeft, Math.min(maxDragRight, currentX))
+      // On desktop (md+), reduce vertical movement to emphasize horizontal swiping
+      const yFactor = isMobile.value ? 1 : 0.3
       gsap.set(card, {
         x: currentX,
-        y: currentY,
+        y: currentY * yFactor,
         rotation: currentX * 0.05,
       })
     }
@@ -191,13 +202,16 @@ const setupCardStack = () => {
       const absX = Math.abs(currentX)
       const absY = Math.abs(currentY)
 
-      if (absX > threshold || absY > threshold) {
+      // On desktop, prioritize horizontal swipes; on mobile allow both axes
+      const shouldSwipe = isMobile.value ? (absX > threshold || absY > threshold) : absX > threshold
+
+      if (shouldSwipe) {
         const directionX = currentX > 0 ? 1 : -1
         const directionY = currentY > 0 ? 1 : -1
         // Constrain swipe distance to keep the card within the viewport
         const maxSwipeX = directionX > 0 ? maxDragRight : maxDragLeft
         const swipeX = directionX * Math.min(Math.abs(currentX) + 100, maxSwipeX)
-        const swipeY = directionY * 200
+        const swipeY = isMobile.value ? directionY * 200 : 0
 
         gsap.to(card, {
           x: swipeX,
@@ -250,17 +264,27 @@ const setViewMode = (mode) => {
 }
 
 onMounted(() => {
+  // Check viewport size and force grid view on mobile
+  checkViewport()
+  resizeHandler = () => checkViewport()
+  window.addEventListener('resize', resizeHandler)
+
   // Section title reveal - horizontal slide from left
   scrollTriggers.push(...useHorizontalSlideReveal(titleRef.value, { x: -120, start: 'top 90%', end: 'top 40%' }))
 
-  // Set up the card stack (default view)
-  setupCardStack()
+  // Set up the card stack (default view on desktop)
+  if (!isMobile.value) {
+    setupCardStack()
+  }
 
   // Set up number counting animation
   setupCountUpAnimation()
 })
 
 onUnmounted(() => {
+  if (resizeHandler) {
+    window.removeEventListener('resize', resizeHandler)
+  }
   scrollTriggers.forEach((trigger) => trigger.kill())
   countTweens.forEach((tween) => {
     tween.scrollTrigger?.kill()
@@ -313,8 +337,8 @@ onUnmounted(() => {
       <div class="flex items-center justify-between mb-10">
         <h2 ref="titleRef" class="section-title ">About Me</h2>
 
-        <!-- View Mode Toggle -->
-        <div class="flex items-center gap-1 p-1 rounded-lg bg-secondary-800 border border-secondary-700 light:bg-secondary-100 light:border-secondary-200">
+        <!-- View Mode Toggle (hidden on mobile - only grid view is available) -->
+        <div class="hidden md:flex items-center gap-1 p-1 rounded-lg bg-secondary-800 border border-secondary-700 light:bg-secondary-100 light:border-secondary-200">
           <button
             @click="setViewMode('grid')"
             class="px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-300"
@@ -373,8 +397,8 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <!-- Grid view -->
-        <div v-if="viewMode === 'grid'" ref="gridRef" class="order-2 lg:order-2 grid sm:grid-cols-2 gap-6">
+        <!-- Grid view (always visible on mobile, toggleable on md+) -->
+        <div v-if="viewMode === 'grid' || isMobile" ref="gridRef" class="order-2 lg:order-2 grid sm:grid-cols-2 gap-6">
           <div
             v-for="item in highlights"
             :key="item.title"
@@ -393,8 +417,8 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <!-- Card stack view -->
-        <div v-else ref="stackRef" class="order-2 lg:order-2 relative h-[12rem] sm:h-[18rem] w-full sm:max-w-none select-none">
+        <!-- Card stack view (only on md+ screens) -->
+        <div v-else-if="!isMobile" ref="stackRef" class="order-2 lg:order-2 relative h-[12rem] sm:h-[18rem] w-full sm:max-w-none select-none">
           <div
             v-for="(item, index) in highlights"
             :key="item.title"
