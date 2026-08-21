@@ -9,6 +9,9 @@ import Footer from './components/Footer.vue'
 import BackToTop from './components/BackToTop.vue'
 import MouseTrail from './components/MouseTrail.vue'
 import IntroLoader from './components/IntroLoader.vue'
+import { useLenis } from './composables/useLenis'
+
+useLenis()
 </script>
 
 <template>

@@ -1,10 +1,15 @@
 <script setup>
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { gsap } from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useTheme } from '../composables/useTheme'
 import { useMouseTrail } from '../composables/useMouseTrail'
 import { useColorPalette } from '../composables/useColorPalette'
 import { useContrastSampler } from '../composables/useContrastSampler'
+import { getLenis } from '../composables/useLenis'
+
+// Register plugin so we can read the ScrollTrigger positions globally
+gsap.registerPlugin(ScrollTrigger)
 
 const isScrolled = ref(false)
 const isMenuOpen = ref(false)
@@ -45,9 +50,57 @@ const handleScroll = () => {
 const scrollToTop = (e) => {
   e.preventDefault()
   isMenuOpen.value = false
-  window.scrollTo({ top: 0, behavior: 'smooth' })
+  const lenis = getLenis()
+  if (lenis) {
+    lenis.scrollTo(0)
+  } else {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 }
 
+const handleNavClick = (e, href) => {
+  e.preventDefault()
+  isMenuOpen.value = false
+
+  const lenis = getLenis()
+
+  // Helper to teleport safely without triggering Lenis slingshots
+  const teleportTo = (targetPos) => {
+    if (lenis) {
+      lenis.stop() // 1. Put Lenis to sleep so it doesn't fight the jump
+      window.scrollTo({ top: targetPos, behavior: 'auto' }) // 2. Instant native jump
+      lenis.start() // 3. Wake Lenis up to sync the new position
+      ScrollTrigger.update() // 4. Tell GSAP we moved (This will fire the onEnter hook and stop Lenis again securely!)
+    } else {
+      window.scrollTo({ top: targetPos, behavior: 'auto' })
+    }
+  }
+
+  if (href === '#home') {
+    teleportTo(0)
+    return
+  }
+
+  const target = document.querySelector(href)
+  if (!target) return
+
+  // Find the GSAP ScrollTrigger for this section
+  const allTriggers = ScrollTrigger.getAll()
+  const trigger = allTriggers.find((t) => t.trigger === target || t.trigger?.id === href.replace('#', ''))
+
+  if (trigger && href === '#about') {
+    // Use GSAP's built-in helper to find the EXACT pixel of the 'stage-1' label
+    if (typeof trigger.labelToScroll === 'function') {
+      const scrollPos = trigger.labelToScroll('stage-1')
+      teleportTo(scrollPos)
+      return
+    }
+  }
+
+  // Fallback for other sections (Tech Stack, Projects)
+  const scrollPos = trigger ? trigger.start : target.getBoundingClientRect().top + window.scrollY
+  teleportTo(scrollPos)
+}
 const handleClickOutside = (e) => {
   if (settingsRef.value && !settingsRef.value.contains(e.target)) {
     isSettingsOpen.value = false
@@ -145,7 +198,6 @@ watch(isSettingsOpen, async (isOpen) => {
           href="#home"
           @click="scrollToTop"
           class="text-xl font-bold text-white light:text-secondary-900 group transition-colors duration-300"
-  
         >
           <span class="text-primary-500 "><</span class="light:text-black">KPC<span class="text-primary-500">/></span>
         </a>
@@ -156,9 +208,8 @@ watch(isSettingsOpen, async (isOpen) => {
             v-for="link in navLinks"
             :key="link.href"
             :href="link.href"
-            @click="link.href === '#home' ? scrollToTop($event) : null"
+            @click="handleNavClick($event, link.href)"
             class="text-secondary-300 whitespace-nowrap hover:text-primary-400 light:text-black transition-colors duration-200 text-sm font-medium relative group"
-            
           >
             {{ link.label }}
             <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary-500 transition-all duration-300 group-hover:w-full"></span>
@@ -167,7 +218,7 @@ watch(isSettingsOpen, async (isOpen) => {
             href="#contact"
             class="bg-primary-500 hover:bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary-500/25"
           >
-            Hire Me
+            Get in Touch
           </a>
 
           <!-- Settings Dropdown -->
@@ -175,7 +226,6 @@ watch(isSettingsOpen, async (isOpen) => {
             <button
               @click.stop="isSettingsOpen = !isSettingsOpen"
               class="p-2 rounded-lg light:text-black text-secondary-300 hover:text-primary-400 hover:bg-secondary-800/50 light:hover:text-primary-600 light:hover:bg-secondary-100 transition-all duration-300 focus:outline-none"
-             
               :aria-label="'Settings'"
               :aria-expanded="isSettingsOpen"
             >
@@ -304,7 +354,7 @@ watch(isSettingsOpen, async (isOpen) => {
           v-for="link in navLinks"
           :key="link.href"
           :href="link.href"
-          @click="link.href === '#home' ? scrollToTop($event) : (isMenuOpen = false)"
+          @click="handleNavClick($event, link.href)"
           class="block text-secondary-300 hover:text-primary-400 light:text-secondary-600 light:hover:text-primary-600 transition-colors duration-200 py-2 text-sm font-medium"
         >
           {{ link.label }}
@@ -314,7 +364,7 @@ watch(isSettingsOpen, async (isOpen) => {
           @click="isMenuOpen = false"
           class="block text-secondary-300 hover:text-primary-400 light:text-secondary-600 light:hover:text-primary-600 transition-colors duration-200 py-2 text-sm font-medium"
         >
-          Hire Me
+          Get in Touch
         </a>
 
         <!-- Mobile Settings -->

@@ -76,9 +76,8 @@
     --color-dark-900: 28 25 23;
   }
 
-  html {
-    scroll-behavior: smooth;
-  }
+  /* NOTE: `scroll-behavior: smooth` is intentionally NOT set on html.
+     Lenis handles smooth scrolling. */
 
   body {
     @apply bg-dark-900 text-secondary-100 antialiased;
@@ -87,6 +86,10 @@
        instead of `hidden` because `hidden` creates a scroll container,
        which would break the hero section's `position: sticky`. */
     overflow-x: clip;
+    /* Ensure words wrap as whole units instead of being cut off mid-word */
+    overflow-wrap: break-word;
+    word-break: normal;
+    hyphens: none;
   }
 
   :root:not(.dark) body {

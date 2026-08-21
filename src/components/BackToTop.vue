@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
+import { getLenis } from '../composables/useLenis'
 
 const isVisible = ref(false)
 
@@ -8,7 +9,12 @@ const handleScroll = () => {
 }
 
 const scrollToTop = () => {
-  window.scrollTo({ top: 0, behavior: 'smooth' })
+  const lenis = getLenis()
+  if (lenis) {
+    lenis.scrollTo(0)
+  } else {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 }
 
 onMounted(() => {

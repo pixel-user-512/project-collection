@@ -63,13 +63,13 @@ export const techStack = [
     name: 'GSAP',
     category: 'Frontend',
     description: 'High-performance animation library',
-    image: 'https://gsap.com/favicon.ico',
+    image: 'https://cdn.simpleicons.org/gsap',
   },
   {
     name: 'Lucide',
     category: 'Frontend',
     description: 'Beautiful & consistent icon toolkit',
-    image: 'https://lucide.dev/favicon.ico',
+    image: 'https://cdn.simpleicons.org/lucide',
   },
   {
     name: 'Axios',
@@ -81,7 +81,7 @@ export const techStack = [
     name: 'shadcn/ui',
     category: 'Frontend',
     description: 'Reusable components built with Radix UI and Tailwind',
-    image: 'https://ui.shadcn.com/favicon.ico',
+    image: 'https://cdn.simpleicons.org/shadcnui',
   },
   {
     name: 'Python',

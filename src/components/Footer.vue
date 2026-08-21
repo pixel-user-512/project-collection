@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useAppleTextReveal } from '../composables/useGsap'
+import { getLenis } from '../composables/useLenis'
 
 const currentYear = new Date().getFullYear()
 const footerRef = ref(null)
@@ -8,7 +9,12 @@ const footerRef = ref(null)
 let scrollTriggers = []
 
 const scrollToTop = () => {
-  window.scrollTo({ top: 0, behavior: 'smooth' })
+  const lenis = getLenis()
+  if (lenis) {
+    lenis.scrollTo(0)
+  } else {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 }
 
 onMounted(() => {

@@ -15,7 +15,6 @@ const roles = ['Frontend Developer', 'Vue.js Specialist', 'UI/UX Enthusiast', 'P
 let typingTimer = null
 let heroTimeline = null
 let cleanupFns = []
-let curtainTrigger = null
 let tiltTween = null
 
 const greetingRef = ref(null)
@@ -94,20 +93,6 @@ onMounted(() => {
       '-=0.5'
     )
 
-  // Curtain lift effect - the hero content gently floats up and fades
-  // as the about section covers it, creating the "curtain reveal" feel
-  curtainTrigger = gsap.to(contentRef.value, {
-    yPercent: -30,
-    opacity: 0.2,
-    ease: 'none',
-    scrollTrigger: {
-      trigger: heroSectionRef.value,
-      start: 'top top',
-      end: 'bottom top',
-      scrub: true,
-    },
-  })
-
   // 3D tilt effect on the name - follows the mouse with a smooth,
   // springy response. The name tilts in 3D space like a holographic
   // foil card catching the light.
@@ -151,7 +136,6 @@ onMounted(() => {
 onUnmounted(() => {
   clearTimeout(typingTimer)
   if (heroTimeline) heroTimeline.kill()
-  if (curtainTrigger) curtainTrigger.scrollTrigger?.kill()
   cleanupFns.forEach((fn) => fn())
 })
 </script>
@@ -160,7 +144,7 @@ onUnmounted(() => {
   <section
     ref="heroSectionRef"
     id="home"
-    class="relative h-screen flex items-center justify-center overflow-hidden sticky top-0"
+    class="relative h-screen flex items-center justify-center overflow-hidden"
   >
     <!-- Background grid pattern -->
     <div class="absolute inset-0 bg-grid opacity-20"></div>
