@@ -2,7 +2,6 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { getLenis } from '../composables/useLenis'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -117,9 +116,6 @@ onMounted(() => {
   })
   gsap.set(progressBar, { scaleX: 0, transformOrigin: 'left center' })
 
-  // Grab the lenis instance
-  const lenis = getLenis()
-
   timeline = gsap.timeline({
     scrollTrigger: {
       trigger: sectionRef.value,
@@ -128,13 +124,6 @@ onMounted(() => {
       pin: true,
       scrub: 1,
       anticipatePin: 1,
-      
-      // === TURN LENIS OFF AND ON ===
-      onEnter: () => { if (lenis) lenis.stop() },       // Scrolling down INTO section (Turn Off)
-      onLeave: () => { if (lenis) lenis.start() },      // Scrolling down OUT OF section (Turn On)
-      onEnterBack: () => { if (lenis) lenis.stop() },   // Scrolling up INTO section (Turn Off)
-      onLeaveBack: () => { if (lenis) lenis.start() },  // Scrolling up OUT OF section (Turn On)
-      
       // Maps the progress bar to the exact scroll position
       onUpdate: (self) => {
         gsap.set(progressBar, { scaleX: self.progress })

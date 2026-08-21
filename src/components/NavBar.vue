@@ -58,26 +58,20 @@ const scrollToTop = (e) => {
   }
 }
 
+// === FIXED NAV CLICK HANDLER (LENIS COMPATIBLE) ===
 const handleNavClick = (e, href) => {
   e.preventDefault()
   isMenuOpen.value = false
 
   const lenis = getLenis()
 
-  // Helper to teleport safely without triggering Lenis slingshots
-  const teleportTo = (targetPos) => {
-    if (lenis) {
-      lenis.stop() // 1. Put Lenis to sleep so it doesn't fight the jump
-      window.scrollTo({ top: targetPos, behavior: 'auto' }) // 2. Instant native jump
-      lenis.start() // 3. Wake Lenis up to sync the new position
-      ScrollTrigger.update() // 4. Tell GSAP we moved (This will fire the onEnter hook and stop Lenis again securely!)
-    } else {
-      window.scrollTo({ top: targetPos, behavior: 'auto' })
-    }
-  }
-
   if (href === '#home') {
-    teleportTo(0)
+    if (lenis) {
+      // Use immediate: true for an instant teleport, or remove it for a luxury smooth glide
+      lenis.scrollTo(0, { immediate: true })
+    } else {
+      window.scrollTo({ top: 0, behavior: 'auto' })
+    }
     return
   }
 
@@ -92,15 +86,27 @@ const handleNavClick = (e, href) => {
     // Use GSAP's built-in helper to find the EXACT pixel of the 'stage-1' label
     if (typeof trigger.labelToScroll === 'function') {
       const scrollPos = trigger.labelToScroll('stage-1')
-      teleportTo(scrollPos)
+      
+      if (lenis) {
+        // { immediate: true } safely teleports Lenis without triggering massive momentum
+        lenis.scrollTo(scrollPos, { immediate: true })
+      } else {
+        window.scrollTo({ top: scrollPos, behavior: 'auto' })
+      }
       return
     }
   }
 
   // Fallback for other sections (Tech Stack, Projects)
   const scrollPos = trigger ? trigger.start : target.getBoundingClientRect().top + window.scrollY
-  teleportTo(scrollPos)
+  
+  if (lenis) {
+    lenis.scrollTo(scrollPos, { immediate: true })
+  } else {
+    window.scrollTo({ top: scrollPos, behavior: 'auto' })
+  }
 }
+
 const handleClickOutside = (e) => {
   if (settingsRef.value && !settingsRef.value.contains(e.target)) {
     isSettingsOpen.value = false
