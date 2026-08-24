@@ -169,35 +169,47 @@ const handleWheel = (e) => {
   e.stopPropagation()
 }
 
-// Attach wheel listener when the fullscreen demo opens
+// Prevent touch events from scrolling the page behind the modal on mobile
+const handleTouchMove = (e) => {
+  e.stopPropagation()
+}
+
+// Attach wheel/touch listeners when the fullscreen demo opens
 watch(showFullscreenDemo, (open) => {
   if (open) {
     nextTick(() => {
       demoContentRef.value?.addEventListener('wheel', handleWheel, { passive: false })
+      demoContentRef.value?.addEventListener('touchmove', handleTouchMove, { passive: false })
     })
   } else {
     demoContentRef.value?.removeEventListener('wheel', handleWheel)
+    demoContentRef.value?.removeEventListener('touchmove', handleTouchMove)
   }
 })
 
 onMounted(() => {
   openAnimation()
   document.body.style.overflow = 'hidden'
+  document.body.style.overscrollBehavior = 'contain'
   // Stop Lenis smooth scrolling so the modal can scroll independently
   const lenis = getLenis()
   if (lenis) lenis.stop()
-  // Stop wheel events from reaching Lenis so native scroll works in the modal
+  // Stop wheel/touch events from reaching Lenis or the body so native scroll works in the modal
   contentRef.value?.addEventListener('wheel', handleWheel, { passive: false })
+  contentRef.value?.addEventListener('touchmove', handleTouchMove, { passive: false })
   window.addEventListener('keydown', handleKeydown)
 })
 
 onUnmounted(() => {
   document.body.style.overflow = ''
+  document.body.style.overscrollBehavior = ''
   // Restore Lenis smooth scrolling
   const lenis = getLenis()
   if (lenis) lenis.start()
   contentRef.value?.removeEventListener('wheel', handleWheel)
+  contentRef.value?.removeEventListener('touchmove', handleTouchMove)
   demoContentRef.value?.removeEventListener('wheel', handleWheel)
+  demoContentRef.value?.removeEventListener('touchmove', handleTouchMove)
   window.removeEventListener('keydown', handleKeydown)
   if (timeline) timeline.kill()
 })
@@ -224,7 +236,7 @@ onUnmounted(() => {
       </button>
 
       <!-- Fullscreen Content -->
-      <div ref="contentRef" class="h-full w-full overflow-y-auto overscroll-contain">
+      <div ref="contentRef" class="h-full w-full overflow-y-auto overscroll-contain touch-pan-y">
         <div class="min-h-full flex flex-col lg:flex-row">
           <!-- Preview Section -->
           <div class="relative lg:w-1/2 lg:h-screen overflow-hidden flex-shrink-0">
@@ -350,7 +362,7 @@ onUnmounted(() => {
             </svg>
           </button>
         </div>
-        <div ref="demoContentRef" class="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+        <div ref="demoContentRef" class="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y">
           <RedemptionApp v-if="isRedemptionProject" class="w-full h-full" />
           <ProjectPreview v-else :project="project" class="w-full h-full" />
         </div>
