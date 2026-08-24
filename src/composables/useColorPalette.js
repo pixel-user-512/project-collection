@@ -201,7 +201,7 @@ const hexToRgb = (hex) => {
   return `${parseInt(result[1], 16)} ${parseInt(result[2], 16)} ${parseInt(result[3], 16)}`
 }
 
-const selectedPalette = ref('goldenHour')
+const selectedPalette = ref('sky')
 
 // Apply the palette as CSS custom properties on :root
 // Values are stored as RGB triplets for Tailwind's rgb(var(--x) / <alpha-value>) syntax
@@ -238,7 +238,7 @@ const initPalette = () => {
   if (saved && colorPalettes[saved]) {
     selectedPalette.value = saved
   } else {
-    selectedPalette.value = 'goldenHour'
+    selectedPalette.value = 'sky'
   }
   applyPalette(selectedPalette.value)
 }

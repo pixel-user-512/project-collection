@@ -244,7 +244,7 @@ onUnmounted(() => {
             <img
               :src="project.image"
               :alt="project.title"
-              class="w-full h-[60vh] sm:h-[55vh] lg:hidden object-cover"
+              class="w-full h-auto lg:hidden object-contain"
             />
             <!-- Interactive preview on desktop -->
             <ProjectPreview :project="project" class="hidden lg:block w-full h-full" />
@@ -326,7 +326,7 @@ onUnmounted(() => {
               </a> -->
               <button
                 @click="showFullscreenDemo = true"
-                class="lg:hidden inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-primary-600 text-white font-medium hover:bg-primary-500 transition-colors duration-300 shadow-lg shadow-primary-500/25 cursor-pointer"
+                class="lg:hidden inline-flex items-center gap-2 mb-32 px-6 py-3 rounded-lg bg-primary-600 text-white font-medium hover:bg-primary-500 transition-colors duration-300 shadow-lg shadow-primary-500/25 cursor-pointer"
               >
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
