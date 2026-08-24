@@ -1,3 +1,5 @@
+import merchantRedemptionImage from '../assets/images/merchant-redemption-form-cover.png'
+
 export const projects = [
   {
     id: 1,
@@ -113,18 +115,18 @@ export const projects = [
   },
   {
     id: 8,
-    title: 'Dev Template',
-    description: 'A modern, responsive developer portfolio template with dark mode, smooth animations, and project showcase features.',
-    tech: ['Vue 3', 'Tailwind CSS', 'Vite'],
-    github: 'https://github.com/yourusername/dev-portfolio',
-    demo: 'https://portfolio-demo.example.com',
-    image: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=600&h=400&fit=crop',
+    title: 'Merchant Redemption Form',
+    description: 'A dynamic merchant redemption form that adapts to each partnered merchant with a smooth redemption, OTP verification, and confirmation flow.',
+    tech: ['Vue 3', 'Tailwind CSS', 'Lucide Icons'],
+    github: 'https://github.com/yourusername/merchant-redemption',
+    demo: 'https://redemption.merchant-form.com/redeem',
+    image: merchantRedemptionImage,
     features: [
-      'Dark/light mode with smooth theme transitions',
-      'GSAP-powered scroll animations and micro-interactions',
-      'Interactive project showcase with detail modals',
-      'Fully responsive layout across all device sizes',
-      'Optimized performance with Vite build tooling',
+      'Dynamic merchant branding that adapts to each partnered merchant',
+      'Smooth redemption flow with form, OTP verification, and confirmation',
+      'Redemption history with status tracking (processing, voided, successful, redeemed, cancelled)',
+      'Secure OTP verification with resend timer and auto-advance inputs',
+      'Mobile-first design with lucide icons throughout the interface',
     ],
   },
 ]

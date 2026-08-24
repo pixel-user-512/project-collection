@@ -1,7 +1,6 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useTilt } from '../composables/useGsap'
-import ProjectPreview from './ProjectPreview.vue'
 
 const props = defineProps({
   project: {
@@ -46,9 +45,13 @@ onUnmounted(() => {
     @click="handleClick"
     class="group bg-secondary-800 border border-secondary-700 rounded-xl overflow-hidden hover:border-primary-500/50 hover:shadow-xl hover:shadow-primary-500/10 transition-all duration-300 will-change-transform cursor-pointer light:bg-white light:border-secondary-200 light:hover:border-primary-500/50 light:hover:shadow-primary-500/10"
   >
-    <!-- Project Preview -->
+    <!-- Project Image -->
     <div class="relative overflow-hidden h-48">
-      <ProjectPreview :project="project" class="w-full h-full group-hover:scale-105 transition-transform duration-500" />
+      <img
+        :src="project.image"
+        :alt="project.title"
+        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+      />
       <div class="absolute inset-0 bg-gradient-to-t from-dark-900/80 to-transparent pointer-events-none"></div>
     </div>
 

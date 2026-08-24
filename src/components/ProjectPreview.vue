@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, reactive } from 'vue'
+import RedemptionApp from './RedemptionApp.vue'
 
 const props = defineProps({
   project: {
@@ -10,6 +11,7 @@ const props = defineProps({
 
 const projectType = computed(() => {
   const title = props.project.title.toLowerCase()
+  if (title.includes('redemption') || title.includes('merchant')) return 'redemption'
   if (title.includes('e-commerce')) return 'ecommerce'
   if (title.includes('task')) return 'task'
   if (title.includes('weather')) return 'weather'
@@ -253,8 +255,11 @@ const setGenericTab = (tab) => {
       </div>
     </div>
 
+    <!-- ============ REDEMPTION FORM (INTERACTIVE) ============ -->
+    <RedemptionApp v-if="projectType === 'redemption'" :show-chrome="false" class="flex-1 min-h-0" />
+
     <!-- ============ E-COMMERCE (INTERACTIVE) ============ -->
-    <div v-if="projectType === 'ecommerce'" class="flex-1 flex flex-col min-h-0 relative">
+    <div v-else-if="projectType === 'ecommerce'" class="flex-1 flex flex-col min-h-0 relative">
       <!-- Nav -->
       <div class="flex items-center justify-between px-3 sm:px-6 py-2.5 sm:py-3 bg-secondary-800 light:bg-white border-b border-secondary-700 light:border-secondary-200 flex-shrink-0">
         <div class="text-primary-500 font-bold text-xs sm:text-sm">🛍️ ShopHub</div>

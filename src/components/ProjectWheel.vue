@@ -1,7 +1,6 @@
 <script setup>
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { gsap } from 'gsap'
-import ProjectPreview from './ProjectPreview.vue'
 import { useTheme } from '../composables/useTheme'
 
 const props = defineProps({
@@ -485,7 +484,11 @@ watch(isDark, () => {
         style="width: 300px; height: 360px;"
       >
         <div class="relative overflow-hidden rounded-t-xl h-48">
-          <ProjectPreview :project="project" class="w-full h-full" />
+          <img
+            :src="project.image"
+            :alt="project.title"
+            class="w-full h-full object-cover"
+          />
           <div v-if="isDark" class="absolute inset-0 bg-gradient-to-t from-dark-900/80 to-transparent rounded-t-xl pointer-events-none"></div>
         </div>
         <div class="p-5 bg-secondary-800 h-full light:bg-white rounded-b-xl">

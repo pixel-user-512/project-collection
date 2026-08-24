@@ -1,7 +1,9 @@
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { gsap } from 'gsap'
 import ProjectPreview from './ProjectPreview.vue'
+import RedemptionApp from './RedemptionApp.vue'
+import { getLenis } from '../composables/useLenis'
 
 const props = defineProps({
   project: {
@@ -16,6 +18,13 @@ const props = defineProps({
 
 const emit = defineEmits(['close'])
 
+const isRedemptionProject = computed(() => {
+  const title = props.project.title.toLowerCase()
+  return title.includes('redemption') || title.includes('merchant')
+})
+
+const showFullscreenDemo = ref(false)
+
 const defaultFeatures = [
   'Responsive design that works across all devices',
   'Optimized performance with lazy loading and code splitting',
@@ -26,6 +35,7 @@ const defaultFeatures = [
 const overlayRef = ref(null)
 const cardRef = ref(null)
 const contentRef = ref(null)
+const demoContentRef = ref(null)
 const closeBtnRef = ref(null)
 const isClosing = ref(false)
 let timeline = null
@@ -154,14 +164,40 @@ const handleKeydown = (e) => {
   }
 }
 
+// Prevent wheel events from bubbling up to Lenis's global listener
+const handleWheel = (e) => {
+  e.stopPropagation()
+}
+
+// Attach wheel listener when the fullscreen demo opens
+watch(showFullscreenDemo, (open) => {
+  if (open) {
+    nextTick(() => {
+      demoContentRef.value?.addEventListener('wheel', handleWheel, { passive: false })
+    })
+  } else {
+    demoContentRef.value?.removeEventListener('wheel', handleWheel)
+  }
+})
+
 onMounted(() => {
   openAnimation()
   document.body.style.overflow = 'hidden'
+  // Stop Lenis smooth scrolling so the modal can scroll independently
+  const lenis = getLenis()
+  if (lenis) lenis.stop()
+  // Stop wheel events from reaching Lenis so native scroll works in the modal
+  contentRef.value?.addEventListener('wheel', handleWheel, { passive: false })
   window.addEventListener('keydown', handleKeydown)
 })
 
 onUnmounted(() => {
   document.body.style.overflow = ''
+  // Restore Lenis smooth scrolling
+  const lenis = getLenis()
+  if (lenis) lenis.start()
+  contentRef.value?.removeEventListener('wheel', handleWheel)
+  demoContentRef.value?.removeEventListener('wheel', handleWheel)
   window.removeEventListener('keydown', handleKeydown)
   if (timeline) timeline.kill()
 })
@@ -192,7 +228,14 @@ onUnmounted(() => {
         <div class="min-h-full flex flex-col lg:flex-row">
           <!-- Preview Section -->
           <div class="relative lg:w-1/2 lg:h-screen overflow-hidden flex-shrink-0">
-            <ProjectPreview :project="project" class="w-full h-[60vh] sm:h-[55vh] lg:h-full" />
+            <!-- Static image on mobile -->
+            <img
+              :src="project.image"
+              :alt="project.title"
+              class="w-full h-[60vh] sm:h-[55vh] lg:hidden object-cover"
+            />
+            <!-- Interactive preview on desktop -->
+            <ProjectPreview :project="project" class="hidden lg:block w-full h-full" />
 
             <!-- Title overlay on preview (mobile) -->
             <div class="absolute bottom-0 left-0 right-0 p-5 sm:p-8 lg:hidden bg-gradient-to-t from-dark-900/90 via-dark-900/50 to-transparent">
@@ -258,7 +301,7 @@ onUnmounted(() => {
 
             <!-- Links -->
             <div class="flex flex-wrap gap-4">
-              <a
+              <!-- <a
                 :href="project.github"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -268,22 +311,61 @@ onUnmounted(() => {
                   <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd" />
                 </svg>
                 View Code
-              </a>
-              <a
-                :href="project.demo"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-primary-600 text-white font-medium hover:bg-primary-500 transition-colors duration-300 shadow-lg shadow-primary-500/25"
+              </a> -->
+              <button
+                @click="showFullscreenDemo = true"
+                class="lg:hidden inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-primary-600 text-white font-medium hover:bg-primary-500 transition-colors duration-300 shadow-lg shadow-primary-500/25 cursor-pointer"
               >
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                 </svg>
-                Live Demo
-              </a>
+                Show Demo
+              </button>
             </div>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- Fullscreen Redemption Demo Overlay -->
+    <transition name="demo-fade">
+      <div
+        v-if="showFullscreenDemo"
+        class="fixed inset-0 z-[10001] bg-dark-900/95 light:bg-secondary-900/95 backdrop-blur-sm flex flex-col"
+      >
+        <div class="flex items-center justify-between px-4 py-3 bg-secondary-800 light:bg-white border-b border-secondary-700 light:border-secondary-200 flex-shrink-0">
+          <div class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+            <span class="text-sm font-semibold text-white light:text-secondary-900">Live Demo</span>
+          </div>
+          <button
+            @click="showFullscreenDemo = false"
+            class="w-9 h-9 rounded-full bg-secondary-700/50 light:bg-secondary-100 flex items-center justify-center text-secondary-300 light:text-secondary-600 hover:text-white light:hover:text-secondary-900 transition-colors cursor-pointer"
+            aria-label="Close live demo"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div ref="demoContentRef" class="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+          <RedemptionApp v-if="isRedemptionProject" class="w-full h-full" />
+          <ProjectPreview v-else :project="project" class="w-full h-full" />
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
+
+<style scoped>
+.demo-fade-enter-active,
+.demo-fade-leave-active {
+  transition: opacity 0.25s ease;
+}
+.demo-fade-enter-from,
+.demo-fade-leave-to {
+  opacity: 0;
+}
+</style>
