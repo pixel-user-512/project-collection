@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
-import { useAppleTextReveal, useHorizontalSlideReveal } from '../composables/useGsap'
+import { useAppleTextReveal, useJellyReveal } from '../composables/useGsap'
 
 const infoRef = ref(null)
 const titleRef = ref(null)
@@ -22,8 +22,8 @@ const socialLinks = [
 ]
 
 onMounted(() => {
-  // Section title reveal - horizontal slide from left
-  scrollTriggers.push(...useHorizontalSlideReveal(titleRef.value, { x: -120, start: 'top 90%', end: 'top 40%' }))
+  // Section title reveal - jelly jiggle into place from the left
+  scrollTriggers.push(...useJellyReveal(titleRef.value, { x: -120, start: 'top 85%' }))
 
   // Info reveal - Apple style
   scrollTriggers.push(

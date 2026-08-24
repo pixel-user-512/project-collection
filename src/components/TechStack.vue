@@ -3,7 +3,7 @@ import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { techStack } from '../data/techStack'
-import { useHorizontalSlideReveal } from '../composables/useGsap'
+import { useJellyReveal } from '../composables/useGsap'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -130,7 +130,7 @@ const setupHoverReveals = () => {
       gsap.set(imageOverlay, { visibility: 'visible' })
       gsap.to(imageOverlay, {
         clipPath: 'circle(150% at 50% 0%)',
-        duration: 0.6,
+        duration: 0.9,
         ease: 'power3.out',
         overwrite: 'auto',
       })
@@ -142,7 +142,7 @@ const setupHoverReveals = () => {
       gsap.set(imageOverlay, { visibility: 'hidden' })
       gsap.to(imageOverlay, {
         clipPath: 'circle(0% at 50% 0%)',
-        duration: 0.5,
+        duration: 0.7,
         ease: 'power3.in',
         overwrite: 'auto',
       })
@@ -168,8 +168,8 @@ const setupHoverReveals = () => {
 }
 
 onMounted(() => {
-  // Section title reveal - horizontal slide from left
-  scrollTriggers.push(...useHorizontalSlideReveal(titleRef.value, { x: -120, start: 'top 90%', end: 'top 40%' }))
+  // Section title reveal - jelly jiggle into place from the left
+  scrollTriggers.push(...useJellyReveal(titleRef.value, { x: -120, start: 'top 85%' }))
 
   // Set up brick wall scroll animations
   setupBrickScrollAnimations()
@@ -227,8 +227,8 @@ watch(filteredTech, async () => {
           class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-105"
           :class="
             activeCategory === category
-              ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/25'
-              : 'bg-secondary-800 text-secondary-400 hover:text-white border border-secondary-700 light:bg-white light:text-secondary-500 light:hover:text-secondary-900 light:border-secondary-200'
+              ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/25 '
+              : 'bg-secondary-800 text-secondary-400 hover:text-white border border-secondary-700 light:bg-white light:text-secondary-500 light:hover:text-primary-500 light:border-secondary-200 light:hover:border-primary-500'
           "
         >
           {{ category }}

@@ -104,6 +104,59 @@ export function useAppleTextReveal(targets, options = {}) {
 }
 
 /**
+ * Creates a jelly/jiggle reveal on scroll.
+ * The element drops/slides into place with an elastic overshoot,
+ * wobbling softly like jelly before settling into its final position.
+ * @param {string|Element|Array} targets - CSS selector, element, or array of elements
+ * @param {Object} options - Animation options
+ * @param {number} options.y - Initial Y offset in px (default: 60)
+ * @param {number} options.x - Initial X offset in px (default: 0)
+ * @param {number} options.scale - Initial scale value (default: 0.9)
+ * @param {number} options.duration - Animation duration in seconds (default: 1.4)
+ * @param {string} options.start - ScrollTrigger start position (default: 'top 85%')
+ * @param {string} options.ease - GSAP easing function (default: 'elastic.out(1, 0.3)')
+ * @param {number} options.delay - Delay before animation starts (default: 0)
+ */
+export function useJellyReveal(targets, options = {}) {
+  const {
+    y = 60,
+    x = 0,
+    scale = 0.9,
+    duration = 1.4,
+    start = 'top 85%',
+    ease = 'elastic.out(1, 0.3)',
+    delay = 0,
+  } = options
+
+  // Set initial state - hidden, slightly offset, slightly scaled down
+  gsap.set(targets, {
+    opacity: 0,
+    y,
+    x,
+    scale,
+    willChange: 'transform, opacity',
+  })
+
+  const animation = gsap.to(targets, {
+    opacity: 1,
+    y: 0,
+    x: 0,
+    scale: 1,
+    duration,
+    delay,
+    ease,
+    scrollTrigger: {
+      trigger: targets,
+      start,
+      once: true,
+    },
+  })
+
+  const triggers = animation.scrollTrigger
+  return Array.isArray(triggers) ? triggers : [triggers]
+}
+
+/**
  * Creates a horizontal slide reveal on scroll that works in both directions.
  * As the user scrolls down, the element slides in from the left to its
  * resting position. As the user scrolls back up, it slides back out to the

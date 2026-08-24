@@ -6,7 +6,7 @@ import { projects } from '../data/projects'
 import ProjectWheel from './ProjectWheel.vue'
 import ProjectCard from './ProjectCard.vue'
 import ProjectDetailModal from './ProjectDetailModal.vue'
-import { useAppleTextReveal, useHorizontalSlideReveal } from '../composables/useGsap'
+import { useAppleTextReveal, useJellyReveal } from '../composables/useGsap'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -181,8 +181,8 @@ onMounted(() => {
   }
   mediaQuery.addEventListener('change', handleMediaChange)
 
-  // Section title reveal - horizontal slide from left
-  scrollTriggers.push(...useHorizontalSlideReveal(titleRef.value, { x: -120, start: 'top 90%', end: 'top 40%' }))
+  // Section title reveal - jelly jiggle into place from the left
+  scrollTriggers.push(...useJellyReveal(titleRef.value, { x: -120, start: 'top 85%' }))
   scrollTriggers.push(...useAppleTextReveal(wheelContainerRef.value, { y: 60, duration: 1.2, start: 'top 80%', blur: 14 }))
 
   // Set up grid scroll progress tracking
@@ -223,9 +223,9 @@ onUnmounted(() => {
       class="fixed top-16 left-0 right-0 z-40 transition-opacity duration-300"
       :class="sectionProgress >= 100 ? 'opacity-0 pointer-events-none' : 'opacity-100'"
     >
-      <div class="h-1 bg-secondary-800/50 light:bg-secondary-200/50 backdrop-blur-sm">
+      <div class="h-1 bg-secondary-800/50 light:bg-secondary-300 backdrop-blur-sm">
         <div
-          class="h-full bg-gradient-to-r from-primary-500 to-accent-500 light:from-primary-600 light:to-accent-600 transition-all duration-150 ease-out"
+          class="h-full bg-gradient-to-r from-primary-500 to-accent-500 light:from-primary-500 light:to-accent-500 transition-all duration-150 ease-out"
           :style="{ width: sectionProgress + '%' }"
         ></div>
       </div>
@@ -246,7 +246,7 @@ onUnmounted(() => {
             :class="
               filter === tech
                 ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/25'
-                : 'bg-secondary-800 text-secondary-400 hover:text-white border border-secondary-700 light:bg-white light:text-secondary-500 light:hover:text-secondary-900 light:border-secondary-200'
+                : 'bg-secondary-800 text-secondary-400 hover:text-white border border-secondary-700 light:bg-white light:text-secondary-500 light:hover:text-primary-500 light:border-secondary-200 light:hover:border-primary-500'
             "
           >
             {{ tech }}

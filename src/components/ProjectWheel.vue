@@ -176,6 +176,17 @@ const updateCardStates = (instant = false, bounce = false) => {
     // but cards beyond the visible range are still hidden
     const finalOpacity = opacity > 0.05 ? 1 : 0
 
+    // Highlight (filter + boxShadow) is applied immediately so it shows
+    // instantly on hover, without waiting for the transform animation.
+    gsap.set(card, {
+      filter: isActive || isHovered ? 'brightness(1)' : isDark.value ? 'brightness(0.7)' : 'brightness(0.85)',
+      boxShadow: isHovered
+        ? '0 25px 60px rgb(var(--color-primary-500) / 0.45)'
+        : isActive
+          ? '0 0 50px rgb(var(--color-primary-500) / 0.35)'
+          : isDark.value ? '0 0 0px rgb(var(--color-primary-500) / 0)' : 'none',
+    })
+
     const vars = {
       x: finalX,
       y: finalY,
@@ -183,12 +194,6 @@ const updateCardStates = (instant = false, bounce = false) => {
       rotation: finalRotation,
       opacity: finalOpacity,
       zIndex: finalZ,
-      filter: isActive || isHovered ? 'brightness(1)' : isDark.value ? 'brightness(0.7)' : 'brightness(0.85)',
-      boxShadow: isHovered
-        ? '0 25px 60px rgb(var(--color-primary-500) / 0.45)'
-        : isActive
-          ? '0 0 50px rgb(var(--color-primary-500) / 0.35)'
-          : isDark.value ? '0 0 0px rgb(var(--color-primary-500) / 0)' : 'none',
       pointerEvents: opacity > 0.05 ? 'auto' : 'none',
       duration,
       ease,
@@ -570,5 +575,15 @@ watch(isDark, () => {
 button:active svg {
   color: #ffffff;
   transition: color 0.2s ease;
+}
+
+/* Arrow icon turns the section background color on hover */
+button:hover svg {
+  color: rgb(var(--color-dark-800));
+  transition: color 0.2s ease;
+}
+
+:root:not(.dark) button:hover svg {
+  color: #ffffff;
 }
 </style>

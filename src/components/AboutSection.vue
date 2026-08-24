@@ -10,7 +10,7 @@ const contentRef = ref(null)
 
 let timeline = null
 
-const skills = ['Vue 3', 'JavaScript', 'TypeScript', 'Node.js', 'Tailwind CSS', 'Git', 'Figma']
+const skills = ['Vue 3', 'TypeScript', 'Node.js', 'Tailwind CSS', 'Github', 'Figma']
 
 const paragraphs = [
   {
@@ -26,7 +26,7 @@ const paragraphs = [
 const stats = [
   {
     title: 'Years Work Experience',
-    count: 4,
+    count: 5,
     subtext: 'Specializing in building modern, responsive frontend applications with a focus on clean, maintainable code and seamless user experiences.',
   },
   {
@@ -63,13 +63,11 @@ const processedTitle = splitIntoWords('About Me');
 
 const processedParagraphs = paragraphs.map(para => ({
   ...para,
-  words: splitIntoWords(para.text)
 }));
 
 const processedStats = stats.map(stat => ({
   ...stat,
   titleWords: stat.count !== null ? splitIntoWords('+ ' + stat.title) : splitIntoWords(stat.title),
-  subtextWords: splitIntoWords(stat.subtext)
 }));
 
 onMounted(() => {
@@ -77,7 +75,6 @@ onMounted(() => {
   const firstParagraphs = contentRef.value.querySelectorAll('.about-paragraph-first')
   const skillItems = contentRef.value.querySelectorAll('.about-skills')
   const progressBar = contentRef.value.querySelector('.about-progress')
-  const titleLetters = title ? title.querySelectorAll('.about-letter') : []
   const statStages = contentRef.value.querySelectorAll('.about-stat-stage')
   const countEls = contentRef.value.querySelectorAll('.about-count')
 
@@ -95,20 +92,23 @@ onMounted(() => {
   }
 
   // Set initial state - all content hidden below position, invisible and blurred
-  gsap.set(titleLetters, { y: 30, opacity: 0, filter: 'blur(4px)' })
-  gsap.set(contentRef.value.querySelectorAll('.about-paragraph-first .about-letter'), {
+  gsap.set(title, { x: -120, opacity: 0, scale: 0.9 })
+  gsap.set(firstParagraphs, {
     y: 30,
     opacity: 0,
-    filter: 'blur(4px)',
+    filter: 'blur(8px)',
   })
   gsap.set(skillItems, { y: '100vh', opacity: 0 })
   gsap.set(statStages, { opacity: 0 })
   statStages.forEach((stage) => {
-    gsap.set(stage.querySelectorAll('.about-letter'), {
-      y: 30,
-      opacity: 0,
-      filter: 'blur(4px)',
-    })
+    const subtextEl = stage.querySelector('.about-stat-subtext')
+    if (subtextEl) {
+      gsap.set(subtextEl, {
+        y: 30,
+        opacity: 0,
+        filter: 'blur(8px)',
+      })
+    }
     const countEl = stage.querySelector('.about-count')
     if (countEl) {
       gsap.set(countEl, { y: 30, opacity: 0 })
@@ -130,36 +130,32 @@ onMounted(() => {
       },
       // === MAGNETIC SNAPPING ===
       snap: {
-        snapTo: "labels", // Snaps automatically to the closest label
+        snapTo: "labels",
         duration: { min: 0.2, max: 0.5 },
-        delay: 0.1, // Wait briefly after scrolling stops
+        delay: 0.1,
         ease: "power2.inOut"
       }
     },
   })
 
   // === STAGE 1: About Me + paragraphs + skills ===
-  // "About Me" title waves in first
-  timeline.to(titleLetters, {
+  // "About Me" title jiggles in from the left like jelly
+  timeline.to(title, {
+    x: 0,
+    opacity: 1,
+    scale: 1,
+    duration: 1,
+    ease: 'elastic.out(1, 0.4)',
+  })
+
+  // First set of paragraphs animate in with a whole-element blur-to-solid reveal
+  timeline.to(firstParagraphs, {
     y: 0,
     opacity: 1,
     filter: 'blur(0px)',
-    duration: 0.3,
-    stagger: 0.02,
+    duration: 0.8,
+    stagger: 0.15,
     ease: 'power2.out',
-  })
-
-  // First set of paragraphs wave in one at a time
-  firstParagraphs.forEach((para) => {
-    const letters = para.querySelectorAll('.about-letter')
-    timeline.to(letters, {
-      y: 0,
-      opacity: 1,
-      filter: 'blur(0px)',
-      duration: 0.3,
-      stagger: 0.025,
-      ease: 'power2.out',
-    })
   })
 
   // Skill tags slide up
@@ -179,7 +175,7 @@ onMounted(() => {
   // === STAT STAGES: 4+ Years, 50+ Projects, Creative Designer, Continuous Learner ===
   statStages.forEach((stage, index) => {
     const stageTitleLetters = stage.querySelectorAll('.about-stat-title .about-letter')
-    const stageSubtextLetters = stage.querySelectorAll('.about-stat-subtext .about-letter')
+    const subtextEl = stage.querySelector('.about-stat-subtext')
     const countEl = stage.querySelector('.about-count')
 
     // Show the stage
@@ -212,15 +208,16 @@ onMounted(() => {
       })
     }
 
-    // Subtext letters wave in
-    timeline.to(stageSubtextLetters, {
-      y: 0,
-      opacity: 1,
-      filter: 'blur(0px)',
-      duration: 0.3,
-      stagger: 0.02,
-      ease: 'power2.out',
-    })
+    // Subtext animates in with a whole-element blur-to-solid reveal
+    if (subtextEl) {
+      timeline.to(subtextEl, {
+        y: 0,
+        opacity: 1,
+        filter: 'blur(0px)',
+        duration: 0.8,
+        ease: 'power2.out',
+      })
+    }
 
     // === LABEL FOR THIS STAT ===
     timeline.add(`stat-${index}`)
@@ -304,15 +301,7 @@ onUnmounted(() => {
           class="about-paragraph-first text-secondary-300 light:text-secondary-700 leading-relaxed"
           :class="para.size"
         >
-          <template v-for="(word, wIndex) in para.words" :key="word.id">
-            <span class="whitespace-nowrap">
-              <span
-                v-for="letter in word.letters"
-                :key="letter.id"
-                class="about-letter inline-block will-change-transform"
-              >{{ letter.char }}</span>
-            </span>{{ wIndex < para.words.length - 1 ? ' ' : '' }}
-          </template>
+          {{ para.text }}
         </p>
 
         <!-- Skill tags -->
@@ -356,15 +345,7 @@ onUnmounted(() => {
         </h2>
         
         <p class="about-stat-subtext text-secondary-300 light:text-secondary-700 leading-relaxed text-lg sm:text-xl md:text-2xl font-light">
-          <template v-for="(word, wIndex) in stat.subtextWords" :key="word.id">
-            <span class="whitespace-nowrap">
-              <span
-                v-for="letter in word.letters"
-                :key="letter.id"
-                class="about-letter inline-block will-change-transform"
-              >{{ letter.char }}</span>
-            </span>{{ wIndex < stat.subtextWords.length - 1 ? ' ' : '' }}
-          </template>
+          {{ stat.subtext }}
         </p>
       </div>
 

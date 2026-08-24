@@ -83,10 +83,21 @@ const handleNavClick = (e, href) => {
   const trigger = allTriggers.find((t) => t.trigger === target || t.trigger?.id === href.replace('#', ''))
 
   if (trigger && href === '#about') {
-    // Use GSAP's built-in helper to find the EXACT pixel of the 'stage-1' label
-    if (typeof trigger.labelToScroll === 'function') {
-      const scrollPos = trigger.labelToScroll('stage-1')
-      
+    // Refresh triggers first so positions are up to date even when the
+    // About section hasn't been activated yet (e.g. when scrolled above it).
+    ScrollTrigger.refresh()
+
+    // Manually compute the scroll position for the 'stage-1' label
+    // (end of the About Me content, right before the stat stages begin).
+    // This is more reliable than labelToScroll() which can return an
+    // incorrect value when the pinned trigger hasn't been activated yet.
+    const tl = trigger.animation
+    const labelTime = tl?.labels?.['stage-1']
+
+    if (typeof labelTime === 'number') {
+      const progress = labelTime / tl.duration()
+      const scrollPos = trigger.start + (progress * (trigger.end - trigger.start))
+
       if (lenis) {
         // { immediate: true } safely teleports Lenis without triggering massive momentum
         lenis.scrollTo(scrollPos, { immediate: true })

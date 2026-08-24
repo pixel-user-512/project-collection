@@ -144,7 +144,7 @@ onUnmounted(() => {
   <section
     ref="heroSectionRef"
     id="home"
-    class="relative h-screen flex items-center justify-center overflow-hidden"
+    class="relative h-screen flex items-center justify-center overflow-hidden light:bg-secondary-100"
   >
     <!-- Background grid pattern -->
     <div class="absolute inset-0 bg-grid opacity-20"></div>
@@ -158,7 +158,7 @@ onUnmounted(() => {
     <div ref="contentRef" class="relative text-center px-4 sm:px-6 lg:px-8 mx-auto ">
       <p
         ref="greetingRef"
-        class="text-primary-400 tracking-widest text-sm mb-4 drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)] light:drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)]"
+        class="text-accent-500 font-semibold tracking-widest text-sm mb-4 drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)] light:drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)]"
       >
       PORTFOLIO
       </p>
@@ -172,7 +172,7 @@ onUnmounted(() => {
         ref="roleRef"
         class="text-2xl sm:text-3xl md:text-4xl  font-semibold text-secondary-300 light:text-secondary-800 mb-6 drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)] light:drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)]"
       >
-        I'm a <span class="text-primary-500 light:text-primary-600">{{ typedText }}</span>
+        I'm a <span class="text-accent-500 light:text-accent-600">{{ typedText }}</span>
         <span class="animate-pulse text-primary-500 light:text-primary-600">|</span>
       </h2>
       <!-- Description: each word is split into its own span at runtime and
@@ -189,7 +189,7 @@ onUnmounted(() => {
           href="#projects"
           class="bg-primary-600  hover:bg-primary-700 text-white px-8 py-3 rounded-lg font-semibold transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary-500/25 w-full sm:w-auto drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)] light:drop-shadow-[0_2px_8px_rgba(0,0,0,0.25)]"
         >
-          View My Work
+          View Projects
         </a>
         <!-- Resume button: same per-word adaptation, plus the border tracks
              the majority background so the outline never vanishes. -->
@@ -197,9 +197,9 @@ onUnmounted(() => {
           ref="resumeBtnRef"
           href="https://docs.google.com/document/d/1pxuH9Ue2NJ18GnzGR44gVKfEIvoe9YvMHj26P7A0RDY/edit?usp=sharing"
           target="_blank"
-          class="resume-btn light:text-primary-800 light:border-primary-800 relative border border-white text-white px-8 py-3 rounded-lg font-semibold transition-all duration-300 hover:scale-105 w-full sm:w-auto"
+          class="resume-btn light:text-primary-500 light:border-none shadow-md hover:shadow-lg light:bg-primary-100 hover:light:bg-primary-200 ease-in-out relative border border-white text-white px-8 py-3 rounded-lg font-semibold transition-all duration-300 hover:scale-105 w-full sm:w-auto"
         >
-          MY RESUME
+         Open Resume
         </a>
       </div>
     </div>
